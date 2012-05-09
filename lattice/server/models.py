@@ -1,6 +1,6 @@
 from spire.schema import *
 
-schema = Schema('ledger')
+schema = Schema('lattice')
 
 Dependencies = Table('dependencies', schema.metadata,
     ForeignKey(name='component_id', column='components.id', nullable=False, primary_key=True),
