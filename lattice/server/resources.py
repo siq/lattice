@@ -47,3 +47,31 @@ class Component(Resource):
             },
             polymorphic_on=Enumeration('git svn', name='type', nonnull=True, required=True))
         dependencies = Sequence(Token(segments=2, nonnull=True), unique=True)
+
+class Product(Resource):
+    """A product stack."""
+
+    name = 'product'
+    version = 1
+
+    class schema:
+        id = Token(segments=1, nonempty=True, operators='equal', oncreate=True,
+            sortable=True)
+        title = Text(nonempty=True)
+        description = Text()
+
+class Profile(Resource):
+    """A product stack profile."""
+
+    name = 'profile'
+    version = 1
+
+    class schema:
+        id = Token(segments=2, nonempty=True, operators='equal', oncreate=True,
+            sortable=True)
+        product_id = Token(segments=1, nonempty=True, operators='equal', sortable=True)
+        version = Token(segments=1, nonempty=True, operators='equal', sortable=True)
+        product = Structure(Product.mirror_schema('id'), readonly=True)
+        components = Sequence(Structure({
+            'id': Token(segments=2, nonempty=True),
+        }))

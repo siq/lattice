@@ -7,6 +7,8 @@ from lattice.server import resources
 
 bundle = Bundle('lattice',
     mount(resources.Component, 'lattice.server.controllers.component.ComponentController'),
+    mount(resources.Product, 'lattice.server.controllers.product.ProductController'),
+    mount(resources.Profile, 'lattice.server.controllers.profile.ProfileController'),
     mount(resources.Project, 'lattice.server.controllers.project.ProjectController'),
 )
 

@@ -5,8 +5,8 @@ schema = Schema('lattice')
 class Project(Model):
     """A project."""
 
-    schema = schema
     class meta:
+        schema = schema
         tablename = 'project'
 
     id = Token(segments=1, nullable=False, primary_key=True)
@@ -17,22 +17,20 @@ class Project(Model):
         uselist=False)
 
 class ProjectRepository(Model):
-    schema = schema
     class meta:
-        tablename = 'project_repository'
         polymorphic_on = 'type'
-        
+        schema = schema
+        tablename = 'project_repository'
 
     id = Identifier()
     project_id = ForeignKey('project.id', nullable=False)
     type = Enumeration('git svn', nullable=False)
 
 class GitProjectRepository(ProjectRepository):
-    schema = schema
     class meta:
         abstract = True
         polymorphic_identity = 'git'
-        extend_existing = True
+        schema = schema
 
     url = Text(nullable=False)
 
@@ -44,9 +42,8 @@ ComponentDependencies = Table('component_dependency', schema.metadata,
 class Component(Model):
     """A stack component."""
 
-    schema = schema
-
     class meta:
+        schema = schema
         tablename = 'component'
 
     id = Token(segments=2, nullable=False, primary_key=True)
@@ -65,21 +62,50 @@ class Component(Model):
         backref='dependents')
 
 class ComponentRepository(Model):
-    schema = schema
     class meta:
-        tablename = 'component_repository'
         polymorphic_on = 'type'
+        schema = schema
+        tablename = 'component_repository'
 
     id = Identifier()
     component_id = ForeignKey('component.id', nullable=False)
     type = Enumeration('git svn', nullable=False)
 
 class GitComponentRepository(ComponentRepository):
-    schema = schema
     class meta:
         abstract = True
         polymorphic_identity = 'git'
-        extend_existing = True
+        schema = schema
 
     url = Text(nullable=False)
     revision = Text(nullable=False)
+
+class Product(Model):
+    class meta:
+        schema = schema
+        tablename = 'product'
+
+    id = Token(segments=1, nullable=False, primary_key=True)
+    title = Text(nullable=False)
+    description = Text()
+
+class Profile(Model):
+    class meta:
+        schema = schema
+        tablename = 'profile'
+        constraints = [UniqueConstraint('product_id', 'version')]
+
+    id = Token(segments=2, nullable=False, primary_key=True)
+    product_id = ForeignKey('product.id', nullable=False)
+    version = Token(segments=1, nullable=False)
+
+    product = relationship('Product', backref='profiles')
+    components = relationship('ProfileComponent', backref='profile')
+    
+class ProfileComponent(Model):
+    class meta:
+        schema = schema
+        tablename = 'profile_component'
+
+    profile_id = ForeignKey('profile.id', nullable=False, primary_key=True)
+    component_id = ForeignKey('component.id', nullable=False, primary_key=True)
