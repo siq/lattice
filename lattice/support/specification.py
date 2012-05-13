@@ -3,7 +3,6 @@ from scheme import *
 
 from lattice.support.versioning import VersionToken
 
-
 Build = Structure({
     'command': Text(nonnull=True),
     'script': Text(nonnull=True),

@@ -2,7 +2,7 @@ from spire.mesh import ModelController
 from spire.schema import SchemaDependency
 
 from lattice.server.resources import Component as ComponentResource
-from lattice.server.models import Component, ComponentRepository
+from lattice.server.models import Build, Component, ComponentRepository
 
 class ComponentController(ModelController):
     resource = ComponentResource
@@ -16,15 +16,22 @@ class ComponentController(ModelController):
         repository = data.get('repository')
         if repository:
             model.repository = ComponentRepository.polymorphic_create(repository)
+
+        builds = data.get('builds')
+        if builds:
+            self.schema.session.query(Build).filter(Build.component_id==model.id).delete()
+            for name, build in builds.iteritems():
+                build['name'] = name
+                model.builds.append(Build.polymorphic_create(build))
     
     def _annotate_resource(self, model, resource, data):
         repository = model.repository
         if repository:
-            if repository.type == 'git':
-                resource['repository'] = {'type': 'git', 'url': repository.url,
-                    'revision': repository.revision}
-            elif repository.type == 'svn':
-                resource['repository'] = {'type': 'svn', 'url': repository.url}
+            resource['repository'] = repository.extract_dict(exclude=['id', 'component_id'])
+
+        builds = resource['builds'] = {}
+        for build in model.builds:
+            builds[build.name] = build.extract_dict(exclude=['id', 'component_id', 'name'])
 
         if data and 'include' in data and 'dependencies' in data['include']:
             resource['dependencies'] = [d.id for d in model.dependencies]

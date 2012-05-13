@@ -34,7 +34,7 @@ class GitProjectRepository(ProjectRepository):
         polymorphic_identity = 'git'
         schema = schema
 
-    url = Text(nullable=False)
+    url = Text()
 
 ComponentDependencies = Table('component_dependency', schema.metadata,
     ForeignKey(name='component_id', column='component.id', nullable=False, primary_key=True),
@@ -57,7 +57,8 @@ class Component(Model):
 
     repository = relationship('ComponentRepository', backref='component',
         cascade='all,delete-orphan', uselist=False)
-
+    builds = relationship('Build', backref='component',
+        cascade='all,delete-orphan')
     dependencies = relationship('Component', secondary=ComponentDependencies,
         primaryjoin=(id == ComponentDependencies.c.component_id),
         secondaryjoin=(id == ComponentDependencies.c.dependency_id),
@@ -83,8 +84,44 @@ class GitComponentRepository(ComponentRepository):
         polymorphic_identity = 'git'
         schema = schema
 
-    url = Text(nullable=False)
-    revision = Text(nullable=False)
+    url = Text()
+    revision = Text()
+
+class Build(Model):
+    class meta:
+        polymorphic_on = 'strategy'
+        schema = schema
+        tablename = 'component_build'
+        constraints = [UniqueConstraint('component_id', 'name')]
+
+    id = Identifier()
+    component_id = ForeignKey('component.id', nullable=False)
+    name = Token(segments=1, nullable=False)
+    strategy = Enumeration('command script task', nullable=False)
+
+class CommandBuild(Build):
+    class meta:
+        abstract = True
+        polymorphic_identity = 'command'
+        schema = schema
+
+    command = Text()
+
+class ScriptBuild(Build):
+    class meta:
+        abstract = True
+        polymorphic_identity = 'script'
+        schema = schema
+
+    script = Text()
+
+class TaskBuild(Build):
+    class meta:
+        abstract = True
+        polymorphic_identity = 'task'
+        schema = schema
+
+    task = Text()
 
 class Product(Model):
     class meta:

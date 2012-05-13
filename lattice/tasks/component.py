@@ -72,7 +72,7 @@ class BuildComponent(Task):
         if not build:
             raise TaskError('invalid build target')
 
-        environ = {'BUILDPATH': self['path']}
+        environ = {'BUILDROOT': self['path']}
         if 'command' in build:
             self._run_command(runtime, environ, build)
         elif 'script' in build:

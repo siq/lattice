@@ -22,6 +22,21 @@ class Project(Resource):
             },
             polymorphic_on=Enumeration('git svn', name='type', nonnull=True, required=True))
 
+Build = Structure(
+    structure={
+        'command': {
+            'command': Text(nonempty=True),
+        },
+        'script': {
+            'script': Text(nonempty=True),
+        },
+        'task': {
+            'task': Text(nonempty=True),
+        }
+    },
+    polymorphic_on=Enumeration('command script task', name='strategy', nonempty=True),
+    nonnull=True)
+
 class Component(Resource):
     """A component."""
 
@@ -47,6 +62,7 @@ class Component(Resource):
             },
             polymorphic_on=Enumeration('git svn', name='type', nonnull=True, required=True))
         dependencies = Sequence(Token(segments=2, nonnull=True), unique=True)
+        builds = Map(Build, nonnull=True)
 
 class Product(Resource):
     """A product stack."""
