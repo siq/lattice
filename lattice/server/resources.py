@@ -75,3 +75,4 @@ class Profile(Resource):
         components = Sequence(Structure({
             'id': Token(segments=2, nonempty=True),
         }))
+        sequence = Sequence(Text(), deferred=True)

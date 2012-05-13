@@ -1,50 +1,75 @@
 import os
 from collections import defaultdict
 
-import yaml
+from bake.path import path
 from bake.process import Process
 
 from lattice.support.specification import Specification
 from lattice.support.versioning import VersionToken
 
-LATTICE_FILENAME = 'lattice.yaml'
-
 class Repository(object):
-    """A source code repository."""
+    implementations = {}
 
-    def __init__(self, path, repository):
-        self.path = path
-        self.repository = repository
+    def __init__(self, root, runtime=None, lfile=None):
+        self.lfile = lfile or Specification.DEFAULT_FILENAME
+        self.root = root
+        self.runtime = runtime
 
-    def enumerate_components(self):
+    def checkout(self, metadata):
         raise NotImplementedError()
 
-    def prepare_repository(self):
-        raise NotImplementedError()
+    @classmethod
+    def fingerprint(cls, root=None):
+        root = path(root or os.getcwd()).abspath()
+        for implementation in cls.implementations.itervalues():
+            if implementation.is_repository(root):
+                return implementation(str(root))
+
+    @classmethod
+    def instantiate(cls, name, *args, **params):
+        return cls.implementations[name](*args, **params)
 
 class GitRepository(Repository):
     SUPPORTED_SYMBOLS = ['HEAD']
 
-    def prepare_repository(self):
-        self._run_command(['clone', self.repository['url'], self.path], False)
+    def checkout(self, metadata):
+        self._run_command(['clone', metadata['url'], self.root], False)
+        
+        revision = metadata.get('revision')
+        if revision and revision != 'HEAD':
+            self._run_command(['checkout', '--detach', '-q', revision])
 
     def enumerate_components(self):
         components = defaultdict(dict)
         for tag in self._get_tags() + self.SUPPORTED_SYMBOLS:
-            candidate = self._get_file(LATTICE_FILENAME, tag)
-            if candidate:
-                specification = Specification(version=tag).parse(candidate)
+            specification = self._get_specification(tag)
+            if specification:
                 for component in specification.enumerate_components():
                     components[component['name']][component['version']] = component
 
-        return components
+        return dict(components)
 
-    def _get_file(self, filename, commit='HEAD'):
-        filename = '%s:%s' % (commit, filename)
+    def get_component(self, name):
+        specification = self._get_specification()
+        if specification:
+            return specification.get_component(name)
+
+    @classmethod
+    def is_repository(cls, root):
+        fingerprint = root / '.git'
+        return fingerprint.exists() and fingerprint.isdir()
+
+    def _get_file(self, filename, commit=None):
+        filename = '%s:%s' % (commit or 'HEAD', filename)
         try:
             return self._run_command(['show', filename]).stdout
         except RuntimeError:
             return None
+
+    def _get_specification(self, commit='HEAD'):
+        candidate = self._get_file(self.lfile, commit)
+        if candidate:
+            return Specification(version=commit).parse(candidate)
 
     def _get_tags(self):
         tags = self._run_command(['tag']).stdout.strip()
@@ -54,10 +79,10 @@ class GitRepository(Repository):
             return []
 
     def _run_command(self, tokens, cwd=True):
-        cwd = self.path if cwd else None
-
         process = Process(['git'] + tokens)
-        if process(cwd=cwd) == 0:
+        if process(runtime=self.runtime, cwd=self.root if cwd else None) == 0:
             return process
         else:
             raise RuntimeError(process.stderr or '')
+
+Repository.implementations['git'] = GitRepository

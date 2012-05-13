@@ -1,5 +1,7 @@
 from spire.schema import *
 
+from lattice.util import topological_sort
+
 schema = Schema('lattice')
 
 class Project(Model):
@@ -61,6 +63,10 @@ class Component(Model):
         secondaryjoin=(id == ComponentDependencies.c.dependency_id),
         backref='dependents')
 
+    @property
+    def dependency_tokens(self):
+        return [dependency.id for dependency in self.dependencies]
+
 class ComponentRepository(Model):
     class meta:
         polymorphic_on = 'type'
@@ -101,7 +107,14 @@ class Profile(Model):
 
     product = relationship('Product', backref='profiles')
     components = relationship('ProfileComponent', backref='profile')
-    
+
+    def collate_components(self):
+        graph = {}
+        for component in self.components:
+            graph[component] = set(component.component.dependency_tokens)
+
+        return topological_sort(graph)
+
 class ProfileComponent(Model):
     class meta:
         schema = schema
@@ -109,3 +122,5 @@ class ProfileComponent(Model):
 
     profile_id = ForeignKey('profile.id', nullable=False, primary_key=True)
     component_id = ForeignKey('component.id', nullable=False, primary_key=True)
+
+    component = relationship('Component')

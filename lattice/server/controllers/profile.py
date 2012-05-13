@@ -32,3 +32,6 @@ class ProfileController(ModelController):
             components.append({
                 'id': component.component_id,
             })
+
+        if data and 'include' in data and 'sequence' in data['include']:
+            print model.collate_components()
