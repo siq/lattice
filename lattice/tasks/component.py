@@ -81,11 +81,11 @@ class BuildComponent(Task):
             self._run_task(runtime, environ, build)
 
     def _run_command(self, runtime, environ, build):
-        runtime.shell(build['command'], environ=environ)
+        runtime.shell(build['command'], environ=environ, merge_output=True)
 
     def _run_script(self, runtime, environ, build):
         tempfile = temppath(runtime.curdir)
         tempfile.write_bytes(build['script'])
 
-        runtime.shell(['bash', '-x', tempfile], environ=environ)
+        runtime.shell(['bash', '-x', tempfile], environ=environ, merge_output=True)
         tempfile.unlink()
