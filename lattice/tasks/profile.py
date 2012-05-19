@@ -38,7 +38,7 @@ class BuildProfile(Task):
             self._build_component(runtime, component)
 
     def _build_component(self, runtime, component):
-        buildpath = runtime.curdir / component['id']
+        buildpath = runtime.curdir / component['name']
         buildpath.mkdir()
 
         curdir = runtime.chdir(buildpath)
