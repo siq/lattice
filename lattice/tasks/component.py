@@ -13,18 +13,26 @@ class AssembleComponent(Task):
         'environ': Map(Text(nonnull=True), description='environment for the build'),
         'name': Text(nonempty=True),
         'path': Text(nonempty=True),
+        'revision': Text(nonnull=True),
         'specification': Field(hidden=True),
         'target': Text(nonnull=True, default='default'),
+        'url': Text(nonnull=True),
     }
 
     def run(self, runtime):
         component = self['specification']
-        if not component:
-            raise TaskError('invalid component')
-
-        metadata = component.get('repository')
-        if not metadata:
-            raise TaskError('invalid repository metadata')
+        if component:
+            metadata = component.get('repository')
+            if not metadata:
+                raise TaskError('invalid repository metadata')
+        elif self['url']:
+            metadata = {'url': self['url']}
+            if 'git' in self['url']:
+                metadata['type'] = 'git'
+            if self['revision']:
+                metadata['revision'] = self['revision']
+        else:
+            raise TaskError('repository not specified')
 
         sourcepath = uniqpath(runtime.curdir, 'src')
         repository = Repository.instantiate(metadata['type'], str(sourcepath), runtime=runtime)
