@@ -34,10 +34,16 @@ class BuildProfile(Task):
             else:
                 raise TaskError('nope')
 
-        curdir = runtime.curdir
         for component in profile['components']:
-            buildpath = curdir / component['id']
-            runtime.chdir(buildpath)
-            runtime.execute('lattice.component.assemble', environ=self['environ'],
-                name=component['name'], path=self['path'], specification=component,
-                target=self['target'])
+            self._build_component(runtime, component)
+
+    def _build_component(self, runtime, component):
+        buildpath = runtime.curdir / component['id']
+        buildpath.mkdir()
+
+        curdir = runtime.chdir(buildpath)
+        runtime.execute('lattice.component.assemble', environ=self['environ'],
+            name=component['name'], path=self['path'], specification=component,
+            target=self['target'])
+
+        runtime.chdir(curdir)
