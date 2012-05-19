@@ -2,11 +2,6 @@ from uuid import uuid4
 
 from bake import path
 
-def temppath(root):
-    if not isinstance(root, path):
-        root = path(root)
-    return root / str(uuid4()).replace('-', '')
-
 def topological_sort(graph):
     queue = []
     edges = graph.values()
@@ -31,3 +26,12 @@ def topological_sort(graph):
 
     result.reverse()
     return result
+
+def uniqpath(root, prefix=''):
+    if not isinstance(root, path):
+        root = path(root)
+    
+    while True:
+        candidate = root / ('%s%s' % (prefix, str(uuid4()).replace('-', '')[:8]))
+        if not candidate.exists():
+            return candidate

@@ -4,17 +4,17 @@ from scheme import *
 
 from lattice.support.repository import Repository
 from lattice.support.specification import Specification
-from lattice.util import temppath
+from lattice.util import uniqpath
 
 class AssembleComponent(Task):
     name = 'lattice.component.assemble'
     description = 'assembles a lattice-based component'
     parameters = {
-        'name': Text(required=True),
-        'path': Text(description='build path', required=True),
-        'build': Text(description='build target', default='default'),
-        'specification': Field(hidden=True, required=True),
-        'collate': Boolean(default=False),
+        'environ': Map(Text(nonnull=True), description='environment for the build'),
+        'name': Text(nonempty=True),
+        'path': Text(nonempty=True),
+        'specification': Field(hidden=True),
+        'target': Text(nonnull=True, default='default'),
     }
 
     def run(self, runtime):
@@ -26,35 +26,29 @@ class AssembleComponent(Task):
         if not metadata:
             raise TaskError('invalid repository metadata')
 
-        sourcepath = runtime.curdir / 'src'
-        if sourcepath.exists():
-            sourcepath.rmtree()
-
-        repository = Repository.instantiate(metadata['type'], str(sourcepath),
-            runtime=runtime)
+        sourcepath = uniqpath(runtime.curdir, 'src')
+        repository = Repository.instantiate(metadata['type'], str(sourcepath), runtime=runtime)
         repository.checkout(metadata)
 
-        original = None
-        if self['collate']:
-            original = Collation(self['path'])
-
+        original = Collation(self['path'])
         curdir = runtime.chdir(sourcepath)
+
         runtime.execute('lattice.component.build', name=self['name'], path=self['path'],
-            build=self['build'], specification=component)
+            target=self['target'], environ=self['environ'], specification=component)
         runtime.chdir(curdir)
 
-        if self['collate']:
-            now = Collation(self['path']).prune(original)
-            now.report(curdir / 'collation.txt')
+        now = Collation(self['path']).prune(original)
+        now.report(curdir / 'collation.txt')
 
 class BuildComponent(Task):
     name = 'lattice.component.build'
     description = 'builds a lattice-based component'
     parameters = {
-        'name': Text(description='name of the component to build', required=True),
-        'path': Text(description='target path', required=True),
-        'build': Text(description='name of build target', default='default'),
+        'environ': Map(Text(nonnull=True), description='environment for the build'),
+        'name': Text(description='name of the component to build', nonempty=True),
+        'path': Text(description='build path', nonempty=True),
         'specification': Field(hidden=True),
+        'target': Text(description='build target', nonnull=True, default='default'),
     }
 
     def run(self, runtime):
@@ -68,11 +62,15 @@ class BuildComponent(Task):
         if 'builds' not in component:
             raise TaskError('component has no builds')
 
-        build = component['builds'].get(self['build'])
+        build = component['builds'].get(self['target'])
         if not build:
             raise TaskError('invalid build target')
 
-        environ = {'BUILDROOT': self['path']}
+        environ = self['environ']
+        if environ is None:
+            environ = {}
+
+        environ['BUILDROOT'] = self['path']
         if 'command' in build:
             self._run_command(runtime, environ, build)
         elif 'script' in build:
@@ -84,8 +82,8 @@ class BuildComponent(Task):
         runtime.shell(build['command'], environ=environ, merge_output=True)
 
     def _run_script(self, runtime, environ, build):
-        tempfile = temppath(runtime.curdir)
-        tempfile.write_bytes(build['script'])
+        script = uniqpath(runtime.curdir, 'script')
+        script.write_bytes(build['script'])
 
-        runtime.shell(['bash', '-x', tempfile], environ=environ, merge_output=True)
-        tempfile.unlink()
+        runtime.shell(['bash', '-x', script], environ=environ, merge_output=True)
+        script.unlink()
