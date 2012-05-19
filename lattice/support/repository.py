@@ -33,11 +33,11 @@ class GitRepository(Repository):
     SUPPORTED_SYMBOLS = ['HEAD']
 
     def checkout(self, metadata):
-        self._run_command(['clone', metadata['url'], self.root], False)
+        self._run_command(['clone', metadata['url'], self.root], False, True)
         
         revision = metadata.get('revision')
         if revision and revision != 'HEAD':
-            self._run_command(['checkout', '--detach', '-q', revision])
+            self._run_command(['checkout', '--detach', '-q', revision], passthrough=True)
 
     def enumerate_components(self):
         components = defaultdict(dict)
@@ -78,8 +78,12 @@ class GitRepository(Repository):
         else:
             return []
 
-    def _run_command(self, tokens, cwd=True):
+    def _run_command(self, tokens, cwd=True, passthrough=False):
         process = Process(['git'] + tokens)
+        if passthrough and self.runtime and self.runtime.verbose:
+            process.merge_output = True
+            process.passthrough = True
+
         if process(runtime=self.runtime, cwd=self.root if cwd else None) == 0:
             return process
         else:
