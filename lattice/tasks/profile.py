@@ -15,6 +15,7 @@ class BuildProfile(Task):
     name = 'lattice.profile.build'
     description = 'builds a lattice profile'
     parameters = {
+        'cachedir': Path(nonnull=True),
         'environ': Map(Text(nonnull=True)),
         'path': Text(nonempty=True),
         'profile': Path(nonnull=True),
@@ -44,6 +45,6 @@ class BuildProfile(Task):
         curdir = runtime.chdir(buildpath)
         runtime.execute('lattice.component.assemble', environ=self['environ'],
             name=component['name'], path=self['path'], specification=component,
-            target=self['target'])
+            target=self['target'], cachedir=self['cachedir'])
 
         runtime.chdir(curdir)

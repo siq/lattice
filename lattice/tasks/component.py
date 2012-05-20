@@ -10,6 +10,7 @@ class AssembleComponent(Task):
     name = 'lattice.component.assemble'
     description = 'assembles a lattice-based component'
     parameters = {
+        'cachedir': Path(nonnull=True),
         'environ': Map(Text(nonnull=True), description='environment for the build'),
         'name': Text(nonempty=True),
         'path': Text(nonempty=True),
@@ -35,7 +36,8 @@ class AssembleComponent(Task):
             raise TaskError('repository not specified')
 
         sourcepath = uniqpath(runtime.curdir, 'src')
-        repository = Repository.instantiate(metadata['type'], str(sourcepath), runtime=runtime)
+        repository = Repository.instantiate(metadata['type'], str(sourcepath),
+            runtime=runtime, cachedir=self['cachedir'])
         repository.checkout(metadata)
 
         original = Collation(self['path'])

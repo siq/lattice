@@ -1,5 +1,6 @@
 import os
 from collections import defaultdict
+from hashlib import sha1
 
 from bake.path import path
 from bake.process import Process
@@ -10,7 +11,8 @@ from lattice.support.versioning import VersionToken
 class Repository(object):
     implementations = {}
 
-    def __init__(self, root, runtime=None, lfile=None):
+    def __init__(self, root, runtime=None, cachedir=None, lfile=None):
+        self.cachedir = cachedir
         self.lfile = lfile or Specification.DEFAULT_FILENAME
         self.root = root
         self.runtime = runtime
@@ -29,15 +31,34 @@ class Repository(object):
     def instantiate(cls, name, *args, **params):
         return cls.implementations[name](*args, **params)
 
+    def _construct_cache_path(self, *values):
+        return self.cachedir / sha1(':'.join([value or '' for value in values])).hexdigest()
+
 class GitRepository(Repository):
     SUPPORTED_SYMBOLS = ['HEAD']
 
     def checkout(self, metadata):
-        self._run_command(['clone', metadata['url'], self.root], False, True)
-        
+        url = metadata['url']
         revision = metadata.get('revision')
+
+        cached = None
+        root = self.root
+
+        if self.cachedir:
+            cached = self._construct_cache_path(url, revision)
+            if cached.exists():
+                cached.symlink(root)
+                return
+            else:
+                root = cached
+                
+        self._run_command(['clone', metadata['url'], root], False, True)
         if revision and revision != 'HEAD':
-            self._run_command(['checkout', '--detach', '-q', revision], passthrough=True)
+            self._run_command(['checkout', '--detach', '-q', revision],
+                passthrough=True, root=root)
+
+        if cached:
+            cached.symlink(self.root)
 
     def enumerate_components(self):
         components = defaultdict(dict)
@@ -78,13 +99,14 @@ class GitRepository(Repository):
         else:
             return []
 
-    def _run_command(self, tokens, cwd=True, passthrough=False):
+    def _run_command(self, tokens, cwd=True, passthrough=False, root=None):
         process = Process(['git'] + tokens)
         if passthrough and self.runtime and self.runtime.verbose:
             process.merge_output = True
             process.passthrough = True
 
-        if process(runtime=self.runtime, cwd=self.root if cwd else None) == 0:
+        root = root or self.root
+        if process(runtime=self.runtime, cwd=root if cwd else None) == 0:
             return process
         else:
             raise RuntimeError(process.stderr or '')
