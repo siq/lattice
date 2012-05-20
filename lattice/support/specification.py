@@ -3,55 +3,54 @@ from scheme import *
 
 from lattice.support.versioning import VersionToken
 
-Build = Structure({
-    'command': Text(nonnull=True),
-    'script': Text(nonnull=True),
-    'task': Text(nonnull=True),
-}, nonnull=True)
-
 Schema = Structure({
-    'components': Map(Structure(nonnull=True, structure={
-        'version': Token(segments=1, nonnull=True),
+    'components': Sequence(Structure(nonnull=True, structure={
+        'name': Token(segments=1, nonempty=True),
+        'version': Token(segments=1, nonempty=True),
         'description': Text(),
         'dependencies': Sequence(Text(nonnull=True), nonnull=True),
-        'builds': Map(Build, nonnull=True),
+        'builds': Map(Structure({
+            'command': Text(nonnull=True),
+            'script': Text(nonnull=True),
+            'task': Text(nonnull=True),
+        }, nonnull=True), nonnull=True),
     }), nonnull=True),
 })
 
 class Specification(object):
-    """A lattice component specification."""
+    """A component specification."""
 
     DEFAULT_FILENAME = 'lattice.yaml'
 
-    def __init__(self, version='HEAD'):
+    def __init__(self, version='HEAD', filename=None):
         self.components = {}
+        self.filename = filename or self.DEFAULT_FILENAME
         self.version = VersionToken(version)
+
+    def enumerate_components(self):
+        for component in self.components.itervalues():
+            yield component
 
     def get_component(self, name):
         return self.components.get(name)
 
-    def enumerate_components(self):
-        for component in self.componets.itervalues():
-            yield component
-
     def parse(self, content, format='yaml'):
         content = Schema.unserialize(content, format)
-        for name, component in content.get('components', {}).iteritems():
-            component['name'] = name
+        for component in content.get('components', []):
             if 'version' in component:
                 component['version'] = VersionToken(component['version'])
             else:
                 component['version'] = self.version
 
             component['id'] = '%(name)s:%(version)s' % component
-            self.components[name] = component
-        
+            self.components[component['id']] = component
+
         return self
 
     def read(self, filepath='.'):
         filepath = path(filepath).abspath()
         if filepath.isdir():
-            filepath /= self.DEFAULT_FILENAME
+            filepath /= self.filename
 
         content = Format.read(str(filepath))
         return self.parse(content, None)
