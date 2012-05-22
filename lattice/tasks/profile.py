@@ -35,6 +35,9 @@ class BuildProfile(Task):
             else:
                 raise TaskError('nope')
 
+        buildpath = path(self['path'])
+        buildpath.mkdir()
+
         for component in profile['components']:
             self._build_component(runtime, component)
 
