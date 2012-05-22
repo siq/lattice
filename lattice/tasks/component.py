@@ -80,7 +80,10 @@ class BuildComponent(Task):
         if environ is None:
             environ = {}
 
-        environ['BUILDROOT'] = self['path']
+        environ['BUILDPATH'] = self['path']
+        if 'INSTALLPATH' not in environ:
+            environ['INSTALLPATH'] = self['path']
+
         if 'command' in build:
             self._run_command(runtime, environ, build)
         elif 'script' in build:
