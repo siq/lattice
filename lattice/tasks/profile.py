@@ -39,6 +39,10 @@ class BuildProfile(Task):
             self._build_component(runtime, component)
 
     def _build_component(self, runtime, component):
+        if 'builds' not in component or self['target'] not in component['builds']:
+            runtime.info('ignoring %s (does not implement target %r)' % (component['name'], self['target']))
+            return
+
         buildpath = runtime.curdir / component['name']
         buildpath.mkdir()
 
