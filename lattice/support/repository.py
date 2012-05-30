@@ -52,7 +52,7 @@ class GitRepository(Repository):
             else:
                 root = cached
                 
-        self._run_command(['clone', metadata['url'], root], False, True)
+        self._run_command(['clone', url, root], False, True)
         if revision and revision != 'HEAD':
             self._run_command(['checkout', '--detach', '-q', revision],
                 passthrough=True, root=root)
@@ -112,3 +112,38 @@ class GitRepository(Repository):
             raise RuntimeError(process.stderr or '')
 
 Repository.implementations['git'] = GitRepository
+
+class SubversionRepository(Repository):
+    SUPPORTED_SYMBOLS = ['HEAD']
+
+    def checkout(self, metadata):
+        url = metadata['url']
+
+        cached = None
+        root = self.root
+
+        if self.cachedir:
+            cached = self._construct_cache_path(url)
+            if cached.exists():
+                cached.symlink(root)
+                return
+            else:
+                root = cached
+
+        self._run_command(['co', url, root], False, True)
+        if cached:
+            cached.symlink(self.root)
+
+    def _run_command(self, tokens, cwd=True, passthrough=False, root=None):
+        process = Process(['svn'] + tokens)
+        if passthrough and self.runtime and self.runtime.verbose:
+            process.merge_output = True
+            process.passthrough = True
+
+        root = root or self.root
+        if process(runtime=self.runtime, cwd=root if cwd else None) == 0:
+            return process
+        else:
+            raise RuntimeError(process.stderr or '')
+
+Repository.implementations['svn'] = SubversionRepository
