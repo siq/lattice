@@ -34,7 +34,6 @@ class AssembleComponent(Task):
                 metadata['revision'] = self['revision']
         else:
             raise TaskError('repository not specified')
-
         sourcepath = uniqpath(runtime.curdir, 'src')
         repository = Repository.instantiate(metadata['type'], str(sourcepath),
             runtime=runtime, cachedir=self['cachedir'])
@@ -49,6 +48,14 @@ class AssembleComponent(Task):
 
         now = Collation(self['path']).prune(original)
         now.report(curdir / 'collation.txt')
+
+        if self['post_tasks']:
+            for post_task in self['post_tasks']:
+                #if not runtime._load_target(post_task):
+                #    raise TaskError('invalid task %s' % post_task)
+                runtime.execute(post_task, environ=self['environ'],
+                            name=component['name'], path=self['path'], 
+                            specification=component, filepaths=now.filepaths)
 
 class BuildComponent(Task):
     name = 'lattice.component.build'

@@ -52,6 +52,6 @@ class BuildProfile(Task):
         curdir = runtime.chdir(buildpath)
         runtime.execute('lattice.component.assemble', environ=self['environ'],
             name=component['name'], path=self['path'], specification=component,
-            target=self['target'], cachedir=self['cachedir'])
+            target=self['target'], cachedir=self['cachedir'], post_tasks=self['post_tasks'])
 
         runtime.chdir(curdir)
