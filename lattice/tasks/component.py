@@ -54,8 +54,8 @@ class AssembleComponent(Task):
                 #if not runtime._load_target(post_task):
                 #    raise TaskError('invalid task %s' % post_task)
                 runtime.execute(post_task, environ=self['environ'],
-                            name=component['name'], path=self['path'], 
-                            specification=component, filepaths=now.filepaths)
+                            name=component['name'], version=component['version'],
+                            filepaths=now.filepaths)
 
 class BuildComponent(Task):
     name = 'lattice.component.build'
