@@ -1,4 +1,5 @@
-from scheme import Task, Map, Sequence, Text
+from scheme import Map, Sequence, Text
+from bake import Task
 
 class BuildTgz(Task):
     name = 'lattice.tgz.build'
