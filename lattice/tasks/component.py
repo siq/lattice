@@ -25,16 +25,16 @@ class ComponentTask(Task):
         return component
 
     @property
-    def environment(self):
-        environment = self['environ']
-        if environment is None:
-            environment = {}
+    def environ(self):
+        environ = self['environ']
+        if environ is None:
+            environ = {}
 
-        environment['BUILDPATH'] = self['path']
-        if 'INSTALLPATH' not in environment:
-            environment['INSTALLPATH'] = self['path']
+        environ['BUILDPATH'] = self['path']
+        if 'INSTALLPATH' not in environ:
+            environ['INSTALLPATH'] = self['path']
 
-        return environment
+        return environ
 
 class AssembleComponent(ComponentTask):
     name = 'lattice.component.assemble'
@@ -109,11 +109,11 @@ class BuildComponent(ComponentTask):
             self._run_task(runtime, build)
 
     def _run_command(self, runtime, build):
-        runtime.shell(build['command'], environ=self.environment, merge_output=True)
+        runtime.shell(build['command'], environ=self.environ, merge_output=True)
 
     def _run_script(self, runtime, build):
         script = uniqpath(runtime.curdir, 'script')
         script.write_bytes(build['script'])
 
-        runtime.shell(['bash', '-x', script], environ=self.environment, merge_output=True)
+        runtime.shell(['bash', '-x', script], environ=self.environ, merge_output=True)
         script.unlink()
