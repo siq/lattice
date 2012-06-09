@@ -32,9 +32,9 @@ class BuildDeb(ComponentTask):
         path('%s/control' % str(controldir)).write_bytes(controlfile)
 
         runtime.chdir(str(self.workpath))
-        self._run_tar(runtime, environ)
+        self._run_tar(runtime)
         runtime.chdir(runtime.curdir[:-len(self['name'])])
-        self._run_dpkg(runtime, environ)
+        self._run_dpkg(runtime)
 
     def _run_tar(self, runtime):
         shellargs = ['tar', '-xvjf', str(self.distpath / self.tgzname)]
