@@ -15,7 +15,7 @@ class BuildTgz(ComponentTask):
         pkgname = '%s-%s.tar.bz2' % (component['name'], component['version'])
 
         environ = self.environ
-        pattern = ',%s,%s,' % (environ['BUILDPATH'], environ['INSTALLPATH'])
+        pattern = "',%s,%s,'" % (environ['BUILDPATH'], environ['INSTALLPATH'])
 
         distpath = runtime.curdir / 'dist'
         distpath.mkdir_p()
