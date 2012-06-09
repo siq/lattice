@@ -12,7 +12,20 @@ class ComponentTask(Task):
         'name': Text(nonempty=True),
         'path': Text(description='build path', nonempty=True),
         'specification': Field(hidden=True),
+        'target': Text(nonnull=True, default='default'),
     }
+
+    @property
+    def build(self):
+        component = self.component
+        if 'builds' not in component:
+            raise TaskError('invalid build target')
+
+        build = component['builds'].get(self['target'])
+        if build:
+            return build
+        else:
+            raise TaskError('invalid build target')
 
     @property
     def component(self):
@@ -42,7 +55,6 @@ class AssembleComponent(ComponentTask):
     parameters = {
         'cachedir': Path(nonnull=True),
         'revision': Text(nonnull=True),
-        'target': Text(nonnull=True, default='default'),
         'url': Text(nonnull=True),
     }
 
@@ -87,20 +99,9 @@ class AssembleComponent(ComponentTask):
 class BuildComponent(ComponentTask):
     name = 'lattice.component.build'
     description = 'builds a lattice-based component'
-    parameters = {
-        'path': Text(description='build path', nonempty=True),
-        'target': Text(description='build target', nonnull=True, default='default'),
-    }
 
     def run(self, runtime):
-        component = self.component
-        if 'builds' not in component:
-            raise TaskError('component has no builds')
-
-        build = component['builds'].get(self['target'])
-        if not build:
-            raise TaskError('invalid build target')
-
+        build = self.build
         if 'command' in build:
             self._run_command(runtime, build)
         elif 'script' in build:

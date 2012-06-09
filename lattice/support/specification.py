@@ -13,6 +13,8 @@ Schema = Structure({
             'command': Text(nonnull=True),
             'script': Text(nonnull=True),
             'task': Text(nonnull=True),
+            'pre-install': Text(nonnull=True),
+            'post-install': Text(nonnull=True),
         }, nonnull=True), nonnull=True),
     }), nonnull=True),
 })
