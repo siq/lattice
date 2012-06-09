@@ -6,7 +6,7 @@ from lattice.support.versioning import VersionToken
 Schema = Structure({
     'components': Sequence(Structure(nonnull=True, structure={
         'name': Token(segments=1, nonempty=True),
-        'version': Token(segments=1, nonempty=True),
+        'version': Token(segments=1, nonnull=True),
         'description': Text(),
         'dependencies': Sequence(Text(nonnull=True), nonnull=True),
         'builds': Map(Structure({
