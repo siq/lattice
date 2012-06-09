@@ -55,6 +55,7 @@ class AssembleComponent(ComponentTask):
     parameters = {
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonnull=True),
+        'post_tasks': Sequence(Text(nonnull=True)),
         'revision': Text(nonnull=True),
         'url': Text(nonnull=True),
     }
