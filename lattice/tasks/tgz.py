@@ -1,4 +1,4 @@
-from bake import Task
+from bake import *
 from scheme import Sequence, Text
 
 from lattice.tasks.component import ComponentTask

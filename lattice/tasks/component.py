@@ -75,6 +75,7 @@ class AssembleComponent(ComponentTask):
             raise TaskError('repository not specified')
 
         distpath = self['distpath'] or runtime.curdir / 'dist'
+        distpath = distpath.abspath()
         distpath.makedirs_p()
 
         sourcepath = uniqpath(runtime.curdir, 'src')
