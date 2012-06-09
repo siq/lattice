@@ -1,4 +1,4 @@
-from scheme import Map, Sequence, Text
+from scheme import Map, Text
 from bake import Task
 from bake.path import path
 from bake.util import get_package_data
@@ -9,7 +9,6 @@ class BuildDeb(Task):
     parameters = {
             'environ': Map(Text(nonnull=True), description='environment for the build'),
             'name': Text(description='name of the component to build', nonempty=True),
-            'filepaths': Sequence(item=Text(nonnull=True),nonnull=True),
             'version': Text(description='version of the component to package', nonempty=True)
             }
 
