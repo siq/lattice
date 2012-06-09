@@ -12,19 +12,13 @@ class BuildTgz(ComponentTask):
 
     def run(self, runtime):
         component = self.component
-        self.pkgname = '%s-%s.tar.bz2' % (component['name'], component['version'])
+        pkgname = '%s-%s.tar.bz2' % (component['name'], component['version'])
 
-        runtime.chdir(runtime.curdir[:-len(self['name'])])
-        self.filepaths = []
-        [self.filepaths.append(ofilepath[len(str(runtime.curdir))+1:]) for \
-                ofilepath in self['filepaths']]
+        environ = self.environment
+        pattern = ',%s,%s,' % (environ['BUILDPATH'], environ['INSTALLPATH'])
 
-        self.distpath = runtime.curdir / 'dist'
-        self.distpath.mkdir()
-        self._run_command(runtime)
+        distpath = runtime.curdir / 'dist'
+        distpath.mkdir_p()
 
-    def _run_command(self, runtime):
-        shellargs = ['pax', '-wjvf', str(self.distpath / self.pkgname), '-s', ',^,\/,']
-        shellargs.extend(self.filepaths)
-        runtime.shell(shellargs, environ=self['environ'], merge_output=True)
-
+        shellargs = ['pax', '-wjvf', str(distpath / pkgname), '-s', pattern] + self['filepaths']
+        runtime.shell(shellargs, merge_output=True)

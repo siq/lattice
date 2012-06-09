@@ -10,6 +10,7 @@ class ComponentTask(Task):
     parameters = {
         'environ': Map(Text(nonnull=True), description='environment for the build'),
         'name': Text(nonempty=True),
+        'path': Text(description='build path', nonempty=True),
         'specification': Field(hidden=True),
     }
 
@@ -23,12 +24,23 @@ class ComponentTask(Task):
                 raise TaskError('unknown component')
         return component
 
+    @property
+    def environment(self):
+        environment = self['environ']
+        if environment is None:
+            environment = {}
+
+        environment['BUILDPATH'] = self['path']
+        if 'INSTALLPATH' not in environment:
+            environment['INSTALLPATH'] = self['path']
+
+        return environment
+
 class AssembleComponent(ComponentTask):
     name = 'lattice.component.assemble'
     description = 'assembles a lattice-based component'
     parameters = {
         'cachedir': Path(nonnull=True),
-        'path': Text(nonempty=True),
         'revision': Text(nonnull=True),
         'target': Text(nonnull=True, default='default'),
         'url': Text(nonnull=True),
@@ -56,6 +68,9 @@ class AssembleComponent(ComponentTask):
 
         original = Collation(self['path'])
         curdir = runtime.chdir(sourcepath)
+
+        if not component:
+            component = self.component
 
         runtime.execute('lattice.component.build', name=self['name'], path=self['path'],
             target=self['target'], environ=self['environ'], specification=component)
@@ -86,27 +101,19 @@ class BuildComponent(ComponentTask):
         if not build:
             raise TaskError('invalid build target')
 
-        environ = self['environ']
-        if environ is None:
-            environ = {}
-
-        environ['BUILDPATH'] = self['path']
-        if 'INSTALLPATH' not in environ:
-            environ['INSTALLPATH'] = self['path']
-
         if 'command' in build:
-            self._run_command(runtime, environ, build)
+            self._run_command(runtime, build)
         elif 'script' in build:
-            self._run_script(runtime, environ, build)
+            self._run_script(runtime, build)
         elif 'task' in build:
-            self._run_task(runtime, environ, build)
+            self._run_task(runtime, build)
 
-    def _run_command(self, runtime, environ, build):
-        runtime.shell(build['command'], environ=environ, merge_output=True)
+    def _run_command(self, runtime, build):
+        runtime.shell(build['command'], environ=self.environment, merge_output=True)
 
-    def _run_script(self, runtime, environ, build):
+    def _run_script(self, runtime, build):
         script = uniqpath(runtime.curdir, 'script')
         script.write_bytes(build['script'])
 
-        runtime.shell(['bash', '-x', script], environ=environ, merge_output=True)
+        runtime.shell(['bash', '-x', script], environ=self.environment, merge_output=True)
         script.unlink()
