@@ -6,16 +6,30 @@ from lattice.support.repository import Repository
 from lattice.support.specification import Specification
 from lattice.util import uniqpath
 
-class AssembleComponent(Task):
+class ComponentTask(Task):
+    parameters = {
+        'environ': Map(Text(nonnull=True), description='environment for the build'),
+        'name': Text(nonempty=True),
+        'specification': Field(hidden=True),
+    }
+
+    @property
+    def component(self):
+        component = self['specification']
+        if not component:
+            specification = Specification().read()
+            component = specification.get_component(self['name'])
+            if not component:
+                raise TaskError('unknown component')
+        return component
+
+class AssembleComponent(ComponentTask):
     name = 'lattice.component.assemble'
     description = 'assembles a lattice-based component'
     parameters = {
         'cachedir': Path(nonnull=True),
-        'environ': Map(Text(nonnull=True), description='environment for the build'),
-        'name': Text(nonempty=True),
         'path': Text(nonempty=True),
         'revision': Text(nonnull=True),
-        'specification': Field(hidden=True),
         'target': Text(nonnull=True, default='default'),
         'url': Text(nonnull=True),
     }
@@ -34,6 +48,7 @@ class AssembleComponent(Task):
                 metadata['revision'] = self['revision']
         else:
             raise TaskError('repository not specified')
+
         sourcepath = uniqpath(runtime.curdir, 'src')
         repository = Repository.instantiate(metadata['type'], str(sourcepath),
             runtime=runtime, cachedir=self['cachedir'])
@@ -57,25 +72,16 @@ class AssembleComponent(Task):
                             name=component['name'], version=component['version'],
                             filepaths=now.filepaths)
 
-class BuildComponent(Task):
+class BuildComponent(ComponentTask):
     name = 'lattice.component.build'
     description = 'builds a lattice-based component'
     parameters = {
-        'environ': Map(Text(nonnull=True), description='environment for the build'),
-        'name': Text(description='name of the component to build', nonempty=True),
         'path': Text(description='build path', nonempty=True),
-        'specification': Field(hidden=True),
         'target': Text(description='build target', nonnull=True, default='default'),
     }
 
     def run(self, runtime):
-        component = self['specification']
-        if not component:
-            specification = Specification().read()
-            component = specification.get_component(self['name'])
-            if not component:
-                raise TaskError('unknown component')
-
+        component = self.component
         if 'builds' not in component:
             raise TaskError('component has no builds')
 
