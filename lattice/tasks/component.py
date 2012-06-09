@@ -54,6 +54,7 @@ class AssembleComponent(ComponentTask):
     description = 'assembles a lattice-based component'
     parameters = {
         'cachedir': Path(nonnull=True),
+        'distpath': Path(nonnull=True),
         'revision': Text(nonnull=True),
         'url': Text(nonnull=True),
     }
@@ -73,28 +74,30 @@ class AssembleComponent(ComponentTask):
         else:
             raise TaskError('repository not specified')
 
+        distpath = self['distpath'] or runtime.curdir / 'dist'
+        distpath.makedirs_p()
+
         sourcepath = uniqpath(runtime.curdir, 'src')
         repository = Repository.instantiate(metadata['type'], str(sourcepath),
             runtime=runtime, cachedir=self['cachedir'])
         repository.checkout(metadata)
 
-        original = Collation(self['path'])
         curdir = runtime.chdir(sourcepath)
-
         if not component:
             component = self.component
 
+        original = Collation(self['path'])
         runtime.execute('lattice.component.build', name=self['name'], path=self['path'],
             target=self['target'], environ=self['environ'], specification=component)
-        runtime.chdir(curdir)
 
         now = Collation(self['path']).prune(original)
-        now.report(curdir / 'collation.txt')
-
         if self['post_tasks']:
             for post_task in self['post_tasks']:
                 runtime.execute(post_task, environ=self['environ'], name=self['name'],
-                    specification=component, filepaths=now.filepaths)
+                    path=self['path'], distpath=distpath, specification=component,
+                    target=self['target'], filepaths=now.filepaths)
+
+        runtime.chdir(curdir)
 
 class BuildComponent(ComponentTask):
     name = 'lattice.component.build'

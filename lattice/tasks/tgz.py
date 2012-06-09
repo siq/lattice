@@ -7,6 +7,7 @@ class BuildTgz(ComponentTask):
     name = 'lattice.tgz.build'
     description = 'builds a tgz of a built component'
     parameters = {
+        'distpath': Path(nonempty=True),
         'filepaths': Sequence(Text(nonnull=True), nonempty=True),
     }
 
@@ -17,8 +18,6 @@ class BuildTgz(ComponentTask):
         environ = self.environ
         pattern = ',%s,%s,' % (environ['BUILDPATH'], environ['INSTALLPATH'])
 
-        distpath = runtime.curdir / 'dist'
-        distpath.mkdir_p()
-
-        shellargs = ['pax', '-wjvf', str(distpath / pkgname), '-s', pattern] + self['filepaths']
-        runtime.shell(shellargs, merge_output=True)
+        filepath = str(self['distpath'] / pkgname)
+        runtime.shell(['pax', '-wjvf', filepath, '-s', pattern] + self['filepaths'],
+            merge_output=True)
