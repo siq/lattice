@@ -10,5 +10,8 @@ setup(
         'lattice.server.controllers',
         'lattice.support',
         'lattice.tasks',
-    ]
+    ],
+    package_data={
+        'lattice': ['templates/*'],
+    }
 )
