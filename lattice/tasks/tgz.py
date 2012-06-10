@@ -13,11 +13,13 @@ class BuildTgz(ComponentTask):
 
     def run(self, runtime):
         component = self.component
-        pkgname = '%s-%s.tar.bz2' % (component['name'], component['version'])
+        pkgbasename = '%s-%s' % (component['name'], component['version'])
 
         environ = self.environ
         pattern = ',%s,%s,' % (environ['BUILDPATH'], environ['INSTALLPATH'])
 
-        filepath = str(self['distpath'] / pkgname)
-        runtime.shell(['pax', '-wjvf', filepath, '-s', pattern] + self['filepaths'],
-            merge_output=True)
+        filepath = str(self['distpath'] / pkgbasename) + '.tar'
+        runtime.shell(['pax', '-wvf', filepath, '-s', pattern] + self['filepaths'],
+                merge_output=True)
+
+        runtime.shell(['bzip2', filepath], merge_output=True)
