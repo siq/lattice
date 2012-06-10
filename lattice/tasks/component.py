@@ -1,3 +1,5 @@
+import tarfile
+
 from bake import *
 from bake.filesystem import Collation
 from scheme import *
@@ -56,6 +58,7 @@ class AssembleComponent(ComponentTask):
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonnull=True),
         'post_tasks': Sequence(Text(nonnull=True)),
+        'repodir': Path(nonnull=True),
         'revision': Text(nonnull=True),
         'tarfile': Boolean(default=False),
         'url': Text(nonnull=True),
@@ -82,7 +85,7 @@ class AssembleComponent(ComponentTask):
 
         sourcepath = uniqpath(runtime.curdir, 'src')
         repository = Repository.instantiate(metadata['type'], str(sourcepath),
-            runtime=runtime, cachedir=self['cachedir'])
+            runtime=runtime, cachedir=self['repodir'])
 
         repository.checkout(metadata)
         version = repository.get_current_version()
@@ -93,6 +96,10 @@ class AssembleComponent(ComponentTask):
         if component['version'] == 'HEAD':
             component['version'] = version
 
+        if self._check_cachedir(component):
+            runtime.chdir(curdir)
+            return
+
         original = Collation(self['path'])
         runtime.execute('lattice.component.build', name=self['name'], path=self['path'],
             target=self['target'], environ=self['environ'], specification=component)
@@ -100,7 +107,7 @@ class AssembleComponent(ComponentTask):
         now = Collation(self['path']).prune(original)
         if self['tarfile']:
             environ = self.environ
-            now.tar(str(distpath / '%(name)s-%(version)s.tar.bz2' % component),
+            now.tar(str(distpath / self._get_component_tarfile(component)),
                 {environ['BUILDPATH']: environ['INSTALLPATH']})
 
         if self['post_tasks']:
@@ -110,6 +117,25 @@ class AssembleComponent(ComponentTask):
                     target=self['target'], filepaths=now.filepaths)
 
         runtime.chdir(curdir)
+
+    def _get_component_tarfile(self, component):
+        return '%(name)s-%(version)s.tar.bz2' % component
+
+    def _check_cachedir(self, component):
+        cachedir = self['cachedir']
+        if not cachedir:
+            return
+
+        cached = cachedir / self._get_component_tarfile(component)
+        if not cached.exists():
+            return
+
+        openfile = tarfile.open(cached, 'r')
+        try:
+            openfile.extractall(str(self['path']))
+            return True
+        finally:
+            openfile.close()
 
 class BuildComponent(ComponentTask):
     name = 'lattice.component.build'
