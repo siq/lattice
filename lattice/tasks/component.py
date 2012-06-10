@@ -46,9 +46,6 @@ class ComponentTask(Task):
             environ = {}
 
         environ['BUILDPATH'] = self['path']
-        if 'INSTALLPATH' not in environ:
-            environ['INSTALLPATH'] = self['path']
-
         return environ
 
 class AssembleComponent(ComponentTask):
@@ -113,7 +110,7 @@ class AssembleComponent(ComponentTask):
         now = Collation(self['path']).prune(original)
         if self['tarfile']:
             tarpath = distpath / self._get_component_tarfile(component)
-            now.tar(str(tarpath), {environ['BUILDPATH']: environ['INSTALLPATH']})
+            now.tar(str(tarpath), {environ['BUILDPATH']: ''})
             if cachedir:
                 tarpath.copy2(cachedir)
 
