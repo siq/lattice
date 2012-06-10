@@ -82,11 +82,15 @@ class AssembleComponent(ComponentTask):
         sourcepath = uniqpath(runtime.curdir, 'src')
         repository = Repository.instantiate(metadata['type'], str(sourcepath),
             runtime=runtime, cachedir=self['cachedir'])
+
         repository.checkout(metadata)
+        version = repository.get_current_version()
 
         curdir = runtime.chdir(sourcepath)
         if not component:
             component = self.component
+        if component['version'] == 'HEAD':
+            component['version'] = version
 
         original = Collation(self['path'])
         runtime.execute('lattice.component.build', name=self['name'], path=self['path'],
