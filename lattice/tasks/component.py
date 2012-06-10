@@ -115,7 +115,7 @@ class AssembleComponent(ComponentTask):
             tarpath = distpath / self._get_component_tarfile(component)
             now.tar(str(tarpath), {environ['BUILDPATH']: environ['INSTALLPATH']})
             if cachedir:
-                tarpath.copyfile(cachedir)
+                tarpath.copy2(cachedir)
 
         if self['post_tasks']:
             for post_task in self['post_tasks']:
