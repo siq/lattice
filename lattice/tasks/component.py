@@ -66,6 +66,8 @@ class AssembleComponent(ComponentTask):
 
     def run(self, runtime):
         component = self['specification']
+        environ = self.environ
+
         if component:
             metadata = component.get('repository')
             if not metadata:
@@ -96,19 +98,24 @@ class AssembleComponent(ComponentTask):
         if component['version'] == 'HEAD':
             component['version'] = version
 
-        if self._check_cachedir(component):
-            runtime.chdir(curdir)
-            return
+        cachedir = self['cachedir']
+        if cachedir:
+            cachedir.makedirs_p()
+            self['tarfile'] = True
+            if self._check_cachedir(cachedir, component):
+                runtime.chdir(curdir)
+                return
 
         original = Collation(self['path'])
         runtime.execute('lattice.component.build', name=self['name'], path=self['path'],
-            target=self['target'], environ=self['environ'], specification=component)
+            target=self['target'], environ=environ, specification=component)
 
         now = Collation(self['path']).prune(original)
         if self['tarfile']:
-            environ = self.environ
-            now.tar(str(distpath / self._get_component_tarfile(component)),
-                {environ['BUILDPATH']: environ['INSTALLPATH']})
+            tarpath = distpath / self._get_component_tarfile(component)
+            now.tar(str(tarpath), {environ['BUILDPATH']: environ['INSTALLPATH']})
+            if cachedir:
+                tarpath.copyfile(cachedir)
 
         if self['post_tasks']:
             for post_task in self['post_tasks']:
@@ -121,11 +128,7 @@ class AssembleComponent(ComponentTask):
     def _get_component_tarfile(self, component):
         return '%(name)s-%(version)s.tar.bz2' % component
 
-    def _check_cachedir(self, component):
-        cachedir = self['cachedir']
-        if not cachedir:
-            return
-
+    def _check_cachedir(self, cachedir, component):
         cached = cachedir / self._get_component_tarfile(component)
         if not cached.exists():
             return
