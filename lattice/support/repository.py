@@ -79,6 +79,9 @@ class GitRepository(Repository):
         process = self._run_command(['describe', '--tags'], passive=True)
         if process.returncode == 0:
             version = process.stdout.strip()
+            # HACK
+            if version[0] == 'v':
+                version = version[1:]
             if '-' in version:
                 tokens = version.split('-')
                 return '%s+%s' % (tokens[0], tokens[1])

@@ -8,13 +8,21 @@ class BuildDeb(ComponentTask):
     description = 'builds a deb file of a built component'
     parameters = {
         'distpath': Path(nonempty=True),
+        'prefix': Text(nonnull=True),
     }
 
     def run(self, runtime):
         component = self.component
+        name = component['name']
+        version = component['version']
+
+        prefix = self['prefix']
+        if prefix:
+            name = '%s-%s' % (prefix.strip('-'), name)
+
         self.buildroot = runtime.curdir
-        self.tgzname = '%s-%s.tar.bz2' % (component['name'], component['version'])
-        self.pkgname = '%s-%s.deb' % (component['name'], component['version'])
+        self.tgzname = '%s-%s.tar.bz2' % (component['name'], version)
+        self.pkgname = '%s-%s.deb' % (name, version)
 
         self.workpath = runtime.curdir / 'build_deb'
         self.workpath.makedirs_p()
@@ -24,8 +32,8 @@ class BuildDeb(ComponentTask):
 
         template = get_package_data('lattice', 'templates/deb-control-file.tmpl')
         controlfile = template % {
-            'component_name': component['name'],
-            'component_version': component['version'],
+            'component_name': name,
+            'component_version': version,
             'component_maintainer_name': 'SIQ',
             'component_maintainer_email': 'acolichia@storediq.com',
             'component_depends': '',
