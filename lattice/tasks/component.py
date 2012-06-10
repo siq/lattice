@@ -95,26 +95,13 @@ class AssembleComponent(ComponentTask):
         if component['version'] == 'HEAD':
             component['version'] = version
 
-        cachedir = self['cachedir']
+        cachedir, cached = self._check_cachedir(component)
         if cachedir:
-            cachedir.makedirs_p()
             self['tarfile'] = True
-            if self._check_cachedir(cachedir, component):
-                runtime.chdir(curdir)
-                return
-
-        original = Collation(self['path'])
-        runtime.execute('lattice.component.build', name=self['name'], path=self['path'],
-            target=self['target'], environ=environ, specification=component)
-        now = Collation(self['path']).prune(original)
 
         tarpath = distpath / self._get_component_tarfile(component)
-        if self['tarfile']:
-            now.tar(str(tarpath), {environ['BUILDPATH']: ''})
-
-        if self['tarfile']:
-            tarpath = distpath / self._get_component_tarfile(component)
-            now.tar(str(tarpath), {environ['BUILDPATH']: ''})
+        if not cached:
+            self._run_build(runtime, component, tarpath)
 
         if self['post_tasks']:
             for post_task in self['post_tasks']:
@@ -126,18 +113,36 @@ class AssembleComponent(ComponentTask):
         if cachedir:
             tarpath.copy2(cachedir)
 
+    def _run_build(self, runtime, component, tarpath):
+        path = self['path']
+        environ = self.environ
+
+        original = Collation(path)
+        runtime.execute('lattice.component.build', name=self['name'], path=path,
+            target=self['target'], environ=environ, specification=component)
+        now = Collation(path).prune(original)
+
+        if self['tarfile']:
+            now.tar(str(tarpath), {environ['BUILDPATH']: ''})
+
     def _get_component_tarfile(self, component):
         return '%(name)s-%(version)s.tar.bz2' % component
 
-    def _check_cachedir(self, cachedir, component):
+    def _check_cachedir(self, component):
+        cachedir = self['cachedir']
+        if cachedir:
+            cachedir.makedirs_p()
+        else:
+            return None, False
+        
         cached = cachedir / self._get_component_tarfile(component)
         if not cached.exists():
-            return
+            return cachedir, False
 
         openfile = tarfile.open(cached, 'r')
         try:
             openfile.extractall(str(self['path']))
-            return True
+            return cachedir, True
         finally:
             openfile.close()
 
