@@ -95,7 +95,7 @@ class AssembleComponent(ComponentTask):
         if component['version'] == 'HEAD':
             component['version'] = version
 
-        cachedir, cached = self._check_cachedir(component)
+        cachedir, cached = self._check_cachedir(component, distpath)
         if cachedir:
             self['tarfile'] = True
 
@@ -128,7 +128,7 @@ class AssembleComponent(ComponentTask):
     def _get_component_tarfile(self, component):
         return '%(name)s-%(version)s.tar.bz2' % component
 
-    def _check_cachedir(self, component):
+    def _check_cachedir(self, component, distpath):
         cachedir = self['cachedir']
         if cachedir:
             cachedir.makedirs_p()
@@ -136,7 +136,9 @@ class AssembleComponent(ComponentTask):
             return None, False
         
         cached = cachedir / self._get_component_tarfile(component)
-        if not cached.exists():
+        if cached.exists():
+            cached.copy2(distpath)
+        else:
             return cachedir, False
 
         openfile = tarfile.open(cached, 'r')
