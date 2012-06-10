@@ -25,7 +25,7 @@ class BuildDeb(ComponentTask):
         self.tgzname = '%s-%s.tar.bz2' % (component['name'], version)
         self.pkgname = '%s-%s.deb' % (name, version)
 
-        self.workpath = runtime.curdir / 'build_deb'
+        self.workpath = runtime.curdir / 'build_%s_deb' % name
         self.workpath.makedirs_p()
 
         controldir = self.workpath / 'DEBIAN'
@@ -45,12 +45,12 @@ class BuildDeb(ComponentTask):
         if 'pre-install' in self.build:
             script = path(self.build['pre-install'])
             if script.exists():
-                script.copyfile(str(controldir / 'preinst'))
+                script.copy2(str(controldir / 'preinst'))
         
         if 'post-install' in self.build:
             script = path(self.build['post-install'])
             if script.exists():
-                script.copyfile(str(controldir / 'postinst'))
+                script.copy2(str(controldir / 'postinst'))
 
         curdir = runtime.chdir(self.workpath)
         self._run_tar(runtime)
