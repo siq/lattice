@@ -1,5 +1,6 @@
 from bake import *
 from bake.util import get_package_data
+from scheme import Text
 
 from lattice.tasks.component import ComponentTask
 
