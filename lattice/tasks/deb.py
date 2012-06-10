@@ -25,7 +25,7 @@ class BuildDeb(ComponentTask):
         self.tgzname = '%s-%s.tar.bz2' % (component['name'], version)
         self.pkgname = '%s-%s.deb' % (name, version)
 
-        self.workpath = runtime.curdir / 'build_%s_deb' % name
+        self.workpath = runtime.curdir / ('build_%s_deb' % name)
         self.workpath.makedirs_p()
 
         controldir = self.workpath / 'DEBIAN'
