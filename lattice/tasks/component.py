@@ -57,6 +57,7 @@ class AssembleComponent(ComponentTask):
         'distpath': Path(nonnull=True),
         'post_tasks': Sequence(Text(nonnull=True)),
         'revision': Text(nonnull=True),
+        'tarfile': Boolean(default=False),
         'url': Text(nonnull=True),
     }
 
@@ -97,6 +98,11 @@ class AssembleComponent(ComponentTask):
             target=self['target'], environ=self['environ'], specification=component)
 
         now = Collation(self['path']).prune(original)
+        if self['tarfile']:
+            environ = self.environ
+            now.tar(str(distpath / '%(name)s-%(version)s.tar.bz2' % component),
+                {environ['BUILDPATH']: environ['INSTALLPATH']})
+
         if self['post_tasks']:
             for post_task in self['post_tasks']:
                 runtime.execute(post_task, environ=self['environ'], name=self['name'],
