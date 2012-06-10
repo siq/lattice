@@ -96,6 +96,9 @@ class GitRepository(Repository):
         fingerprint = root / '.git'
         return fingerprint.exists() and fingerprint.isdir()
 
+    def _clean_repo(self):
+        self._run_command(['clean', '-dx'], passthrough=True)
+
     def _get_file(self, filename, commit=None):
         filename = '%s:%s' % (commit or 'HEAD', filename)
         try:

@@ -106,21 +106,25 @@ class AssembleComponent(ComponentTask):
         original = Collation(self['path'])
         runtime.execute('lattice.component.build', name=self['name'], path=self['path'],
             target=self['target'], environ=environ, specification=component)
-
         now = Collation(self['path']).prune(original)
+
+        tarpath = distpath / self._get_component_tarfile(component)
+        if self['tarfile']:
+            now.tar(str(tarpath), {environ['BUILDPATH']: ''})
+
         if self['tarfile']:
             tarpath = distpath / self._get_component_tarfile(component)
             now.tar(str(tarpath), {environ['BUILDPATH']: ''})
-            if cachedir:
-                tarpath.copy2(cachedir)
 
         if self['post_tasks']:
             for post_task in self['post_tasks']:
                 runtime.execute(post_task, environ=self['environ'], name=self['name'],
                     path=self['path'], distpath=distpath, specification=component,
-                    target=self['target'], filepaths=now.filepaths)
+                    target=self['target'], cachedir=cachedir)
 
         runtime.chdir(curdir)
+        if cachedir:
+            tarpath.copy2(cachedir)
 
     def _get_component_tarfile(self, component):
         return '%(name)s-%(version)s.tar.bz2' % component

@@ -8,6 +8,7 @@ class BuildDeb(ComponentTask):
     name = 'lattice.deb.build'
     description = 'builds a deb file of a built component'
     parameters = {
+        'cachedir': Path(nonnull=True),
         'distpath': Path(nonempty=True),
         'prefix': Text(nonnull=True),
     }
@@ -63,5 +64,9 @@ class BuildDeb(ComponentTask):
         runtime.shell(shellargs, merge_output=True)
 
     def _run_dpkg(self, runtime):
-        shellargs = ['dpkg', '-b', str(self.workpath), str(self['distpath'] / self.pkgname)]
-        runtime.shell(shellargs, merge_output=True)
+        pkgpath = self['distpath'] / self.pkgname
+        runtime.shell(['dpkg', '-b', str(self.workpath), str(pkgpath)], merge_output=True)
+
+        cachedir = self['cachedir']
+        if cachedir:
+            pkgpath.copy2(cachedir)
