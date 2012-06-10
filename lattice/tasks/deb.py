@@ -62,7 +62,9 @@ class BuildDeb(ComponentTask):
                 scriptpath = path(build[token])
                 if scriptpath.exists():
                     script = interpolate_env_vars(scriptpath.bytes(), environ)
-                    path(controldir / scriptname).write_bytes(script).chmod(0755)
+                    scriptfile = controldir / scriptname
+                    scriptfile.write_bytes(script)
+                    scriptfile.chmod(0755)
 
         curdir = runtime.chdir(self.workpath)
         self._run_tar(runtime)
