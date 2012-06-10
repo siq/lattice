@@ -22,7 +22,6 @@ class BuildDeb(ComponentTask):
         if prefix:
             name = '%s-%s' % (prefix.strip('-'), name)
 
-        self.buildroot = runtime.curdir
         self.tgzname = '%s-%s.tar.bz2' % (component['name'], version)
         self.pkgname = '%s-%s.deb' % (name, version)
 
@@ -35,7 +34,7 @@ class BuildDeb(ComponentTask):
         dependencies = component.get('dependencies')
         if dependencies:
             if prefix:
-                dependencies = ['%s-%s' % (prefix.strip('-'), name) for name in dependencies]
+                dependencies = ['%s-%s' % (prefix.strip('-'), d) for d in dependencies]
             dependencies = ', '.join(dependencies)
 
         template = get_package_data('lattice', 'templates/deb-control-file.tmpl')
@@ -71,7 +70,7 @@ class BuildDeb(ComponentTask):
 
     def _run_dpkg(self, runtime):
         pkgpath = self['distpath'] / self.pkgname
-        runtime.shell(['dpkg', '-b', str(self.workpath), str(pkgpath)], merge_output=True)
+        runtime.shell(['fakeroot', 'dpkg', '-b', str(self.workpath), str(pkgpath)], merge_output=True)
 
         cachedir = self['cachedir']
         if cachedir:
