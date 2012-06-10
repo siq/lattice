@@ -3,6 +3,7 @@ from bake.util import get_package_data
 from scheme import Text
 
 from lattice.tasks.component import ComponentTask
+from lattice.util import interpolate_env_vars
 
 class BuildDeb(ComponentTask):
     name = 'lattice.deb.build'
@@ -13,8 +14,15 @@ class BuildDeb(ComponentTask):
         'prefix': Text(nonnull=True),
     }
 
+    SCRIPTS = {
+        'pre-install': 'preinst',
+        'post-install': 'postinst',
+    }
+
     def run(self, runtime):
         component = self.component
+        environ = self.environ
+
         name = component['name']
         version = component['version']
 
@@ -48,15 +56,13 @@ class BuildDeb(ComponentTask):
         
         path('%s/control' % str(controldir)).write_bytes(controlfile)
 
-        if 'pre-install' in self.build:
-            script = path(self.build['pre-install'])
-            if script.exists():
-                script.copy2(str(controldir / 'preinst'))
-        
-        if 'post-install' in self.build:
-            script = path(self.build['post-install'])
-            if script.exists():
-                script.copy2(str(controldir / 'postinst'))
+        build = self.build
+        for token, scriptname in self.SCRIPTS.iteritems():
+            if token in build:
+                scriptpath = path(build[token])
+                if scriptpath.exists():
+                    script = interpolate_env_vars(scriptpath.bytes(), environ)
+                    path(controldir / scriptname).write_bytes(script).chmod(0755)
 
         curdir = runtime.chdir(self.workpath)
         self._run_tar(runtime)

@@ -1,6 +1,12 @@
+import re
 from uuid import uuid4
 
 from bake import path
+
+ENV_VAR_EXPR = re.compile(r'[$][{]([a-zA-Z]+)[}]')
+
+def interpolate_env_vars(content, environ):
+    return ENV_VAR_EXPR.sub(lambda m: environ.get(m.group(1)), content)
 
 def topological_sort(graph):
     queue = []
