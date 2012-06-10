@@ -75,6 +75,19 @@ class GitRepository(Repository):
         if specification:
             return specification.get_component(name)
 
+    def get_current_version(self, unknown_version='0.0.0'):
+        process = self._run_command(['describe', '--tags'], passive=True)
+        if process.returncode == 0:
+            version = process.stdout.strip()
+            if '-' in version:
+                tokens = version.split('-')
+                return '%s+%s' % (tokens[0], tokens[1])
+            else:
+                return version
+
+        process = self._run_command(['rev-list', '--all', '--count'])
+        return '%s+%s' % (unknown_version, process.stdout.strip())
+
     @classmethod
     def is_repository(cls, root):
         fingerprint = root / '.git'
@@ -99,14 +112,15 @@ class GitRepository(Repository):
         else:
             return []
 
-    def _run_command(self, tokens, cwd=True, passthrough=False, root=None):
+    def _run_command(self, tokens, cwd=True, passthrough=False, root=None, passive=False):
         process = Process(['git'] + tokens)
         if passthrough and self.runtime and self.runtime.verbose:
             process.merge_output = True
             process.passthrough = True
 
         root = root or self.root
-        if process(runtime=self.runtime, cwd=root if cwd else None) == 0:
+        returncode = process(runtime=self.runtime, cwd=(root if cwd else None))
+        if passive or returncode == 0:
             return process
         else:
             raise RuntimeError(process.stderr or '')
@@ -133,6 +147,11 @@ class SubversionRepository(Repository):
         self._run_command(['co', url, root], False, True)
         if cached:
             cached.symlink(self.root)
+
+    @classmethod
+    def is_repository(cls, root):
+        fingerprint = root / '.svn'
+        return fingerprint.exists() and fingerprint.isdir()
 
     def _run_command(self, tokens, cwd=True, passthrough=False, root=None):
         process = Process(['svn'] + tokens)

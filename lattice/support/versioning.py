@@ -1,7 +1,7 @@
 import re
 from functools import total_ordering
 
-VERSION_EXPR = re.compile(r'^([0-9]+)[.]([0-9]+)[.]([0-9]+)(?:([a-z]{1,2})([0-9]+))?$')
+VERSION_EXPR = re.compile(r'^([0-9]+)[.]([0-9]+)[.]([0-9]+)(?:([a-z]{1,2})([0-9]+))?(?:[+]([0-9]+))?$')
 
 @total_ordering
 class VersionToken(object):
