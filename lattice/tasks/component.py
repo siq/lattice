@@ -65,6 +65,7 @@ class AssembleComponent(ComponentTask):
     def run(self, runtime):
         component = self['specification']
         environ = self.environ
+        metadata = self._get_repository_metadata(component)
 
         distpath = (self['distpath'] or runtime.curdor / 'dist').abspath()
         distpath.makedirs_p()
@@ -73,7 +74,7 @@ class AssembleComponent(ComponentTask):
         repository = Repository.instantiate(metadata['type'], str(sourcepath),
             runtime=runtime, cachedir=self['repodir'])
 
-        repository.checkout(self._get_repository_metadata(component))
+        repository.checkout(metadata)
         version = repository.get_current_version()
 
         curdir = runtime.chdir(sourcepath)
