@@ -99,6 +99,8 @@ class AssembleComponent(ComponentTask):
         tarpath = distpath / self._get_component_tarfile(component)
         if building:
             self._run_build(runtime, component, tarpath)
+            if built is not None:
+                built.append(component['name'])
 
         if self['post_tasks']:
             timestamp = self['timestamp']
@@ -110,8 +112,6 @@ class AssembleComponent(ComponentTask):
         runtime.chdir(curdir)
         if cachedir:
             tarpath.copy2(cachedir)
-        if built is not None:
-            built.append(component['name'])
 
     def _check_cachedir(self, cachedir, component, distpath):
         cached = cachedir / self._get_component_tarfile(component)
