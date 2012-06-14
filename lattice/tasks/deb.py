@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from bake import *
 from bake.util import get_package_data
 from scheme import Text
@@ -12,6 +14,7 @@ class BuildDeb(ComponentTask):
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonempty=True),
         'prefix': Text(nonnull=True),
+        'timestamp': Boolean(default=False),
     }
 
     SCRIPTS = {
@@ -25,6 +28,10 @@ class BuildDeb(ComponentTask):
 
         name = component['name']
         version = component['version']
+
+        if self['timestamp']:
+            timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+            version = '%s-%s' % (version, timestamp)
 
         prefix = self['prefix']
         if prefix:

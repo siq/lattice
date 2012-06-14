@@ -52,6 +52,7 @@ class AssembleComponent(ComponentTask):
     name = 'lattice.component.assemble'
     description = 'assembles a lattice-based component'
     parameters = {
+        'built': Field(hidden=True),
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonnull=True),
         'post_tasks': Sequence(Text(nonnull=True)),
@@ -65,28 +66,14 @@ class AssembleComponent(ComponentTask):
         component = self['specification']
         environ = self.environ
 
-        if component:
-            metadata = component.get('repository')
-            if not metadata:
-                raise TaskError('invalid repository metadata')
-        elif self['url']:
-            metadata = {'url': self['url']}
-            if 'git' in self['url']:
-                metadata['type'] = 'git'
-            if self['revision']:
-                metadata['revision'] = self['revision']
-        else:
-            raise TaskError('repository not specified')
-
-        distpath = self['distpath'] or runtime.curdir / 'dist'
-        distpath = distpath.abspath()
+        distpath = (self['distpath'] or runtime.curdor / 'dist').abspath()
         distpath.makedirs_p()
 
         sourcepath = uniqpath(runtime.curdir, 'src')
         repository = Repository.instantiate(metadata['type'], str(sourcepath),
             runtime=runtime, cachedir=self['repodir'])
 
-        repository.checkout(metadata)
+        repository.checkout(self._get_repository_metadata(component))
         version = repository.get_current_version()
 
         curdir = runtime.chdir(sourcepath)
@@ -95,12 +82,20 @@ class AssembleComponent(ComponentTask):
         if component['version'] == 'HEAD':
             component['version'] = version
 
-        cachedir, cached = self._check_cachedir(component, distpath)
+        built = self['built']
+        building = self._must_build(component, built)
+
+        cachedir = self['cachedir']
         if cachedir:
+            cachedir.makedirs_p()
             self['tarfile'] = True
+            if not building:
+                building = self._check_cachedir(cachedir, component, distpath)
+        else:
+            building = True
 
         tarpath = distpath / self._get_component_tarfile(component)
-        if not cached:
+        if building:
             self._run_build(runtime, component, tarpath)
 
         if self['post_tasks']:
@@ -112,6 +107,52 @@ class AssembleComponent(ComponentTask):
         runtime.chdir(curdir)
         if cachedir:
             tarpath.copy2(cachedir)
+        if built is not None:
+            built.append(component['name'])
+
+    def _check_cachedir(self, cachedir, component, distpath):
+        cached = cachedir / self._get_component_tarfile(component)
+        if cached.exists():
+            cached.copy2(distpath)
+        else:
+            return True
+
+        openfile = tarfile.open(cached, 'r')
+        try:
+            openfile.extractall(str(self['path']))
+        finally:
+            openfile.close()
+
+    def _get_component_tarfile(self, component):
+        return '%(name)s-%(version)s.tar.bz2' % component
+
+    def _get_repository_metadata(self, component):
+        if component:
+            try:
+                return component['repository']
+            except KeyError:
+                raise TaskError('invalid repository metadata')
+        elif self['url']:
+            metadata = {'url': self['url']}
+            if 'git' in self['url']:
+                metadata['type'] == 'git'
+            if self['revision']:
+                metadata['revision'] = self['revision']
+            return metadata
+        else:
+            raise TaskError('repository not specified')
+
+    def _must_build(self, component, built):
+        if not built:
+            return False
+
+        dependencies = component.get('dependencies')
+        if not dependencies:
+            return False
+
+        for dependency in dependencies:
+            if dependency in built:
+                return True
 
     def _run_build(self, runtime, component, tarpath):
         path = self['path']
@@ -124,29 +165,6 @@ class AssembleComponent(ComponentTask):
 
         if self['tarfile']:
             now.tar(str(tarpath), {environ['BUILDPATH']: ''})
-
-    def _get_component_tarfile(self, component):
-        return '%(name)s-%(version)s.tar.bz2' % component
-
-    def _check_cachedir(self, component, distpath):
-        cachedir = self['cachedir']
-        if cachedir:
-            cachedir.makedirs_p()
-        else:
-            return None, False
-        
-        cached = cachedir / self._get_component_tarfile(component)
-        if cached.exists():
-            cached.copy2(distpath)
-        else:
-            return cachedir, False
-
-        openfile = tarfile.open(cached, 'r')
-        try:
-            openfile.extractall(str(self['path']))
-            return cachedir, True
-        finally:
-            openfile.close()
 
 class BuildComponent(ComponentTask):
     name = 'lattice.component.build'

@@ -15,8 +15,8 @@ class Project(Model):
     status = Enumeration('active inactive', nullable=False, default='active')
     description = Text()
 
-    repository = relationship('ProjectRepository', backref='project', cascade='all,delete-orphan',
-        uselist=False)
+    repository = relationship('ProjectRepository', backref='backref',
+        cascade='all,delete-orphan', uselist=False)
 
 class ProjectRepository(Model):
     class meta:
@@ -37,8 +37,10 @@ class GitProjectRepository(ProjectRepository):
     url = Text()
 
 ComponentDependencies = Table('component_dependency', schema.metadata,
-    ForeignKey(name='component_id', column='component.id', nullable=False, primary_key=True),
-    ForeignKey(name='dependency_id', column='component.id', nullable=False, primary_key=True),
+    ForeignKey(name='component_id', column='component.id',
+        nullable=False, primary_key=True),
+    ForeignKey(name='dependency_id', column='component.id',
+        nullable=False, primary_key=True),
 )
 
 class Component(Model):

@@ -10,7 +10,6 @@ class AssembleProfile(Task):
 
     }
 
-
 class BuildProfile(Task):
     name = 'lattice.profile.build'
     description = 'builds a lattice profile'
@@ -40,13 +39,15 @@ class BuildProfile(Task):
         buildpath = path(self['path'])
         buildpath.mkdir()
 
+        built = []
         for component in profile['components']:
-            self._build_component(runtime, component)
+            self._build_component(runtime, component, built)
 
-    def _build_component(self, runtime, component):
-        if 'builds' not in component or self['target'] not in component['builds']:
-            runtime.info('ignoring %s (does not implement target %r)' % (component['name'], self['target']))
-            return
+    def _build_component(self, runtime, component, built):
+        target = self['target']
+        if 'builds' not in component or target not in component['builds']:
+            runtime.info('ignoring %s (does not implement target %r)'
+                % (component['name'], target))
 
         buildpath = runtime.curdir / component['name']
         buildpath.mkdir()
@@ -55,6 +56,6 @@ class BuildProfile(Task):
         runtime.execute('lattice.component.assemble', environ=self['environ'],
             distpath=self['distpath'], name=component['name'], path=self['path'],
             specification=component, target=self['target'], cachedir=self['cachedir'],
-            post_tasks=self['post_tasks'])
+            post_tasks=self['post_tasks'], built=built)
 
         runtime.chdir(curdir)
