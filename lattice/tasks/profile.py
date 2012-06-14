@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from bake import *
 from scheme import *
 
@@ -39,11 +41,13 @@ class BuildProfile(Task):
         buildpath = path(self['path'])
         buildpath.mkdir()
 
+        timestamp = datetime.utcnow()
+
         built = []
         for component in profile['components']:
-            self._build_component(runtime, component, built)
+            self._build_component(runtime, component, built, timestamp)
 
-    def _build_component(self, runtime, component, built):
+    def _build_component(self, runtime, component, built, timestamp):
         target = self['target']
         if 'builds' not in component or target not in component['builds']:
             runtime.info('ignoring %s (does not implement target %r)'
@@ -56,6 +60,6 @@ class BuildProfile(Task):
         runtime.execute('lattice.component.assemble', environ=self['environ'],
             distpath=self['distpath'], name=component['name'], path=self['path'],
             specification=component, target=self['target'], cachedir=self['cachedir'],
-            post_tasks=self['post_tasks'], built=built)
+            post_tasks=self['post_tasks'], built=built, timestamp=timestamp)
 
         runtime.chdir(curdir)

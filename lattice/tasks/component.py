@@ -15,6 +15,7 @@ class ComponentTask(Task):
         'path': Text(description='build path', nonempty=True),
         'specification': Field(hidden=True),
         'target': Text(nonnull=True, default='default'),
+        'timestamp': Field(hidden=True),
     }
 
     @property
@@ -100,10 +101,11 @@ class AssembleComponent(ComponentTask):
             self._run_build(runtime, component, tarpath)
 
         if self['post_tasks']:
+            timestamp = self['timestamp']
             for post_task in self['post_tasks']:
                 runtime.execute(post_task, environ=self['environ'], name=self['name'],
                     path=self['path'], distpath=distpath, specification=component,
-                    target=self['target'], cachedir=cachedir)
+                    target=self['target'], cachedir=cachedir, timestamp=timestamp)
 
         runtime.chdir(curdir)
         if cachedir:

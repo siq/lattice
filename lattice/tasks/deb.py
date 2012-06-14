@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from bake import *
 from bake.util import get_package_data
 from scheme import *
@@ -14,7 +12,7 @@ class BuildDeb(ComponentTask):
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonempty=True),
         'prefix': Text(nonnull=True),
-        'timestamp': Boolean(default=False),
+        'use_revision_field': Boolean(default=False),
     }
 
     SCRIPTS = {
@@ -34,9 +32,10 @@ class BuildDeb(ComponentTask):
         if prefix:
             name = '%s-%s' % (prefix.strip('-'), name)
 
-        if self['timestamp']:
-            timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-            version = '%s-%s' % (version, timestamp)
+        if self['use_revision_field']:
+            timestamp = self['timestamp']
+            if timestamp:
+                version = '%s-%s' % (version, timestamp.strftime('%Y%m%d%H%M%S'))
 
         self.pkgname = '%s-%s.deb' % (name, version)
 
