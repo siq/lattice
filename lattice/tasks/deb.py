@@ -2,7 +2,7 @@ from datetime import datetime
 
 from bake import *
 from bake.util import get_package_data
-from scheme import Text
+from scheme import *
 
 from lattice.tasks.component import ComponentTask
 from lattice.util import interpolate_env_vars
