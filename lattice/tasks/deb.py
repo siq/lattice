@@ -28,16 +28,16 @@ class BuildDeb(ComponentTask):
 
         name = component['name']
         version = component['version']
-
-        if self['timestamp']:
-            timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-            version = '%s-%s' % (version, timestamp)
+        self.tgzname = '%s-%s.tar.bz2' % (name, version)
 
         prefix = self['prefix']
         if prefix:
             name = '%s-%s' % (prefix.strip('-'), name)
 
-        self.tgzname = '%s-%s.tar.bz2' % (component['name'], version)
+        if self['timestamp']:
+            timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+            version = '%s-%s' % (version, timestamp)
+
         self.pkgname = '%s-%s.deb' % (name, version)
 
         self.workpath = runtime.curdir / ('build_%s_deb' % name)
