@@ -12,7 +12,6 @@ class BuildDeb(ComponentTask):
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonempty=True),
         'prefix': Text(nonnull=True),
-        'use_revision_field': Boolean(default=False),
     }
 
     SCRIPTS = {
@@ -32,7 +31,7 @@ class BuildDeb(ComponentTask):
         if prefix:
             name = '%s-%s' % (prefix.strip('-'), name)
 
-        if self['use_revision_field']:
+        if component.get('volatile'):
             timestamp = self['timestamp']
             if timestamp:
                 version = '%s-%s' % (version, timestamp.strftime('%Y%m%d%H%M%S'))
