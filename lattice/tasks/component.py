@@ -99,7 +99,7 @@ class AssembleComponent(ComponentTask):
         tarpath = distpath / self._get_component_tarfile(component)
         if building:
             self._run_build(runtime, component, tarpath)
-            if built is not None:
+            if built is not None and not component.get('independent'):
                 built.append(component['name'])
 
         if self['post_tasks']:
