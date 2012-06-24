@@ -17,6 +17,8 @@ class BuildDeb(ComponentTask):
     SCRIPTS = {
         'pre-install': 'preinst',
         'post-install': 'postinst',
+        'pre-remove': 'prerm',
+        'post-remove': 'postrm',
     }
 
     def run(self, runtime):
