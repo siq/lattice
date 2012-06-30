@@ -14,12 +14,12 @@ class BuildDeb(ComponentTask):
         'prefix': Text(nonnull=True),
     }
 
-    SCRIPTS = {
+    SCRIPTS = (
         ('pre-install', 'pre-install-script', 'preinst'),
         ('post-install', 'post-install-script', 'postinst'),
         ('pre-remove', 'pre-remove-script', 'prerm'),
         ('post-remove', 'post-remove-script', 'postrm'),
-    }
+    )
 
     def run(self, runtime):
         component = self.component
@@ -64,7 +64,7 @@ class BuildDeb(ComponentTask):
         path('%s/control' % str(controldir)).write_bytes(controlfile)
 
         build = self.build
-        for file_token, script_token, script_name in self.SCRIPTS.iteritems():
+        for file_token, script_token, script_name in self.SCRIPTS:
             script = None
             if file_token in build:
                 scriptpath = path(build[file_token])
