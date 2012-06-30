@@ -15,10 +15,10 @@ class BuildDeb(ComponentTask):
     }
 
     SCRIPTS = {
-        'pre-install': 'preinst',
-        'post-install': 'postinst',
-        'pre-remove': 'prerm',
-        'post-remove': 'postrm',
+        ('pre-install', 'pre-install-script', 'preinst'),
+        ('post-install', 'post-install-script', 'postinst'),
+        ('pre-remove', 'pre-remove-script', 'prerm'),
+        ('post-remove', 'post-remove-script', 'postrm'),
     }
 
     def run(self, runtime):
@@ -64,14 +64,19 @@ class BuildDeb(ComponentTask):
         path('%s/control' % str(controldir)).write_bytes(controlfile)
 
         build = self.build
-        for token, scriptname in self.SCRIPTS.iteritems():
-            if token in build:
-                scriptpath = path(build[token])
+        for file_token, script_token, script_name in self.SCRIPTS.iteritems():
+            script = None
+            if file_token in build:
+                scriptpath = path(build[file_token])
                 if scriptpath.exists():
-                    script = interpolate_env_vars(scriptpath.bytes(), environ)
-                    scriptfile = controldir / scriptname
-                    scriptfile.write_bytes(script)
-                    scriptfile.chmod(0755)
+                    script = scriptpath.bytes()
+            elif script_token in build:
+                script = build[script_token]
+            if script:
+                script = interpolate_env_vars(script, environ)
+                scriptfile = controldir / script_name
+                scriptfile.write_bytes(script)
+                scriptfile.chmod(0755)
 
         curdir = runtime.chdir(self.workpath)
         self._run_tar(runtime)
