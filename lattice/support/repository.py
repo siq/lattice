@@ -158,9 +158,25 @@ class SubversionRepository(Repository):
     def is_repository(cls, root):
         fingerprint = root / '.svn'
         return fingerprint.exists() and fingerprint.isdir()
+    
+    def get_current_version(self, unknown_version='0.0.0'):
+        process = self._run_command(['.'], cmd='svnversion')
+        if process.returncode == 0:
+            version = process.stdout.strip()
+            # HACK
+            if version[0] == 'r':
+                version = version[1:]
+            if '/' in version:
+                tokens = version.split('/')
+                return '%s+%s' % (tokens[0], tokens[1])
+            else:
+                return version
 
-    def _run_command(self, tokens, cwd=True, passthrough=False, root=None):
-        process = Process(['svn'] + tokens)
+        #process = self._run_command(['rev-list', '--all', '--count'])
+        #return '%s+%s' % (unknown_version, process.stdout.strip())
+
+    def _run_command(self, tokens, cwd=True, passthrough=False, root=None, cmd='svn'):
+        process = Process([cmd] + tokens)
         if passthrough and self.runtime and self.runtime.verbose:
             process.merge_output = True
             process.passthrough = True
