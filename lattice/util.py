@@ -5,6 +5,9 @@ from bake import path
 
 ENV_VAR_EXPR = re.compile(r'[$][{]([a-zA-Z]+)[}]')
 
+def dashes_to_underscores(original):
+    return dict((key.replace('-', '_'), value) for key, value in original.iteritems())
+
 def interpolate_env_vars(content, environ):
     return ENV_VAR_EXPR.sub(lambda m: environ.get(m.group(1)), content)
 

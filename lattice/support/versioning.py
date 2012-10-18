@@ -68,6 +68,10 @@ class VersionToken(object):
     def __str__(self):
         return self.version
 
+    @classmethod
+    def validate(cls, version):
+        return str(cls(version))
+
     def _compare_version(self, other):
         if self.tokens != other.tokens:
             return self.tokens < other.tokens

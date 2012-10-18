@@ -4,6 +4,7 @@ from hashlib import sha1
 
 from bake.path import path
 from bake.process import Process
+from scheme import ValidationError
 
 from lattice.support.specification import Specification
 from lattice.support.versioning import VersionToken
@@ -17,7 +18,7 @@ class Repository(object):
         self.root = root
         self.runtime = runtime
 
-    def checkout(self, metadata):
+    def checkout(self, url, revision=None):
         raise NotImplementedError()
 
     @classmethod
@@ -37,10 +38,7 @@ class Repository(object):
 class GitRepository(Repository):
     SUPPORTED_SYMBOLS = ['HEAD']
 
-    def checkout(self, metadata):
-        url = metadata['url']
-        revision = metadata.get('revision')
-
+    def checkout(self, url, revision=None):
         cached = None
         root = self.root
 
@@ -51,7 +49,7 @@ class GitRepository(Repository):
                 return
             else:
                 root = cached
-                
+
         self._run_command(['clone', url, root], False, True)
         if revision and revision != 'HEAD':
             self._run_command(['checkout', '--detach', '-q', revision],
@@ -61,27 +59,22 @@ class GitRepository(Repository):
             cached.symlink(self.root)
 
     def enumerate_components(self):
-        components = defaultdict(dict)
+        components = {}
         for tag in self._get_tags() + self.SUPPORTED_SYMBOLS:
-            specification = self._get_specification(tag)
-            if specification:
-                for component in specification.enumerate_components():
-                    components[component['name']][component['version']] = component
+            try:
+                specification = self._get_specification(tag)
+                if specification:
+                    for component in specification.enumerate_components():
+                        components[component['id']] = component
+            except ValidationError:
+                print 'validation error'
 
-        return dict(components)
-
-    def get_component(self, name):
-        specification = self._get_specification()
-        if specification:
-            return specification.get_component(name)
+        return components
 
     def get_current_version(self, unknown_version='0.0.0'):
         process = self._run_command(['describe', '--tags'], passive=True)
         if process.returncode == 0:
             version = process.stdout.strip()
-            # HACK
-            if version[0] == 'v':
-                version = version[1:]
             if '-' in version:
                 tokens = version.split('-')
                 return '%s+%s' % (tokens[0], tokens[1])
@@ -132,59 +125,3 @@ class GitRepository(Repository):
             raise RuntimeError(process.stderr or '')
 
 Repository.implementations['git'] = GitRepository
-
-class SubversionRepository(Repository):
-    SUPPORTED_SYMBOLS = ['HEAD']
-
-    def checkout(self, metadata):
-        url = metadata['url']
-
-        cached = None
-        root = self.root
-
-        if self.cachedir:
-            cached = self._construct_cache_path(url)
-            if cached.exists():
-                cached.symlink(root)
-                return
-            else:
-                root = cached
-
-        self._run_command(['co', url, root], False, True)
-        if cached:
-            cached.symlink(self.root)
-
-    @classmethod
-    def is_repository(cls, root):
-        fingerprint = root / '.svn'
-        return fingerprint.exists() and fingerprint.isdir()
-    
-    def get_current_version(self, unknown_version='0.0.0'):
-        process = self._run_command(['.'], cmd='svnversion')
-        if process.returncode == 0:
-            version = process.stdout.strip()
-            # HACK
-            if version[0] == 'r':
-                version = version[1:]
-            if '/' in version:
-                tokens = version.split('/')
-                return '%s+%s' % (tokens[0], tokens[1])
-            else:
-                return version
-
-        #process = self._run_command(['rev-list', '--all', '--count'])
-        #return '%s+%s' % (unknown_version, process.stdout.strip())
-
-    def _run_command(self, tokens, cwd=True, passthrough=False, root=None, cmd='svn'):
-        process = Process([cmd] + tokens)
-        if passthrough and self.runtime and self.runtime.verbose:
-            process.merge_output = True
-            process.passthrough = True
-
-        root = root or self.root
-        if process(runtime=self.runtime, cwd=root if cwd else None) == 0:
-            return process
-        else:
-            raise RuntimeError(process.stderr or '')
-
-Repository.implementations['svn'] = SubversionRepository

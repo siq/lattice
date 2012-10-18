@@ -1,0 +1,25 @@
+uwsgi:
+  home: /home/jrm/.env/standard
+  http-socket: 127.0.0.1:5858
+  master: true
+  module: spire.runtime.uwsgi
+  need-app: true
+  processes: 4
+components:
+  - lattice.component.Lattice
+configuration:
+  schema:lattice:
+    admin_url: postgresql://postgres@localhost/postgres
+    url: postgresql://postgres@localhost/lattice
+logging:
+  disable_existing_loggers: false
+  formatters:
+    standard:
+      (): spire.support.logs.LogFormatter
+  handlers:
+    stream:
+      class: logging.StreamHandler
+      formatter: standard
+  root:
+    level: DEBUG
+    handlers: [stream]
