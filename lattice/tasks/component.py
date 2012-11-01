@@ -49,10 +49,42 @@ class ComponentTask(Task):
         environ['BUILDPATH'] = self['path']
         return environ
 
+class ComponentAssembler(object):
+    def __init__(self, component):
+        self.component = component
+
+    def build(self, runtime, name, path, target, environ, component):
+        pass
+
+    def get_version(self):
+        raise NotImplementedError()
+
+    def prepare_source(self, runtime, sourcepath, repodir):
+        pass
+
+class StandardAssembler(ComponentAssembler):
+    def build(self, runtime, name, path, target, environ, component):
+        runtime.execute('lattice.component.build', name=name, path=path, target=target,
+            environ=environ, specification=component)
+
+    def get_version(self):
+        return self.repository.get_current_version()
+
+    def prepare_source(self, runtime, sourcepath, repodir):
+        try:
+            metadata = self.component['repository']
+        except KeyError:
+            raise TaskError('invalid repository metadata')
+
+        self.repository = Repository.instantiate(metadata['type'], str(sourcepath),
+            runtime=runtime, cachedir=repodir)
+        self.repository.checkout(metadata)
+
 class AssembleComponent(ComponentTask):
     name = 'lattice.component.assemble'
     description = 'assembles a lattice-based component'
     parameters = {
+        'assembler': Field(hidden=True, default=StandardAssembler),
         'built': Field(hidden=True),
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonnull=True),
@@ -65,25 +97,20 @@ class AssembleComponent(ComponentTask):
 
     def run(self, runtime):
         component = self['specification']
+        assembler = self['assembler'](component)
         environ = self.environ
-        metadata = self._get_repository_metadata(component)
 
-        distpath = (self['distpath'] or runtime.curdor / 'dist').abspath()
+        distpath = ((self['distpath'] or runtime.curdir) / 'dist').abspath()
         distpath.makedirs_p()
 
         sourcepath = uniqpath(runtime.curdir, 'src')
-        repository = Repository.instantiate(metadata['type'], str(sourcepath),
-            runtime=runtime, cachedir=self['repodir'])
+        assembler.prepare_source(runtime, sourcepath, self['repodir'])
 
-        repository.checkout(metadata)
-        version = repository.get_current_version()
-
-        curdir = runtime.chdir(sourcepath)
-        if not component:
-            component = self.component
+        version = assembler.get_version()
         if component['version'] == 'HEAD':
             component['version'] = version
 
+        curdir = runtime.chdir(sourcepath)
         built = self['built']
         building = self._must_build(component, built)
 
@@ -98,7 +125,7 @@ class AssembleComponent(ComponentTask):
 
         tarpath = distpath / self._get_component_tarfile(component)
         if building:
-            self._run_build(runtime, component, tarpath)
+            self._run_build(runtime, assembler, component, tarpath)
             if built is not None and not component.get('independent'):
                 built.append(component['name'])
 
@@ -157,13 +184,12 @@ class AssembleComponent(ComponentTask):
             if dependency in built:
                 return True
 
-    def _run_build(self, runtime, component, tarpath):
+    def _run_build(self, runtime, assembler, component, tarpath):
         path = self['path']
         environ = self.environ
 
         original = Collation(path)
-        runtime.execute('lattice.component.build', name=self['name'], path=path,
-            target=self['target'], environ=environ, specification=component)
+        assembler.build(runtime, self['name'], path, self['target'], environ, component)
         now = Collation(path).prune(original)
 
         if self['tarfile']:
