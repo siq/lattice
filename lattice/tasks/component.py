@@ -50,16 +50,13 @@ class ComponentTask(Task):
         return environ
 
 class ComponentAssembler(object):
-    def __init__(self, component):
-        self.component = component
-
     def build(self, runtime, name, path, target, environ, component):
         pass
 
-    def get_version(self):
+    def get_version(self, component):
         raise NotImplementedError()
 
-    def prepare_source(self, runtime, sourcepath, repodir):
+    def prepare_source(self, runtime, component, sourcepath, repodir):
         pass
 
 class StandardAssembler(ComponentAssembler):
@@ -67,10 +64,10 @@ class StandardAssembler(ComponentAssembler):
         runtime.execute('lattice.component.build', name=name, path=path, target=target,
             environ=environ, specification=component)
 
-    def get_version(self):
+    def get_version(self, component):
         return self.repository.get_current_version()
 
-    def prepare_source(self, runtime, sourcepath, repodir):
+    def prepare_source(self, runtime, component, sourcepath, repodir):
         try:
             metadata = self.component['repository']
         except KeyError:
@@ -84,7 +81,7 @@ class AssembleComponent(ComponentTask):
     name = 'lattice.component.assemble'
     description = 'assembles a lattice-based component'
     parameters = {
-        'assembler': Field(hidden=True, default=StandardAssembler),
+        'assembler': Field(hidden=True),
         'built': Field(hidden=True),
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonnull=True),
@@ -96,17 +93,20 @@ class AssembleComponent(ComponentTask):
     }
 
     def run(self, runtime):
+        assembler = self['assembler']
+        if not assembler:
+            assembler = StandardAssembler()
+
         component = self['specification']
-        assembler = self['assembler'](component)
         environ = self.environ
 
         distpath = ((self['distpath'] or runtime.curdir) / 'dist').abspath()
         distpath.makedirs_p()
 
         sourcepath = uniqpath(runtime.curdir, 'src')
-        assembler.prepare_source(runtime, sourcepath, self['repodir'])
+        assembler.prepare_source(runtime, component, sourcepath, self['repodir'])
 
-        version = assembler.get_version()
+        version = assembler.get_version(component)
         if component['version'] == 'HEAD':
             component['version'] = version
 
