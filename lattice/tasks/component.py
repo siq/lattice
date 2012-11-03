@@ -69,7 +69,7 @@ class StandardAssembler(ComponentAssembler):
 
     def prepare_source(self, runtime, component, sourcepath, repodir):
         try:
-            metadata = self.component['repository']
+            metadata = component['repository']
         except KeyError:
             raise TaskError('invalid repository metadata')
 
