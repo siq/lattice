@@ -71,9 +71,8 @@ class BuildProfile(Task):
         runtime.chdir(curdir)
 
     def _build_version(self, runtime, profile, timestamp):
-        """ """
         assembler = VersionComponentAssembler(profile)
-        component = {'name': 'manifest', 'version': profile['version']}
+        component = {'name': 'manifest', 'version': profile['version'], 'nocache': True}
         runtime.execute(
                 'lattice.component.assemble', environ=self['environ'], distpath=self['distpath'],
                 name=component['name'], path=self['path'],

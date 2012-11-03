@@ -137,7 +137,7 @@ class AssembleComponent(ComponentTask):
                     target=self['target'], cachedir=cachedir, timestamp=timestamp)
 
         runtime.chdir(curdir)
-        if cachedir:
+        if cachedir and not component.get('nocache', False):
             tarpath.copy2(cachedir)
 
     def _check_cachedir(self, cachedir, component, distpath):
