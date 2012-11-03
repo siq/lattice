@@ -62,6 +62,8 @@ class BuildProfile(Task):
         buildpath = runtime.curdir / component['name']
         buildpath.mkdir()
 
+        runtime.linefeed(2)
+
         curdir = runtime.chdir(buildpath)
         runtime.execute('lattice.component.assemble', environ=self['environ'],
             distpath=self['distpath'], name=component['name'], path=self['path'],

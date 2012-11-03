@@ -85,7 +85,7 @@ class BuildDeb(ComponentTask):
         self._run_dpkg(runtime)
 
     def _run_tar(self, runtime):
-        shellargs = ['tar', '-xvjf', str(self['distpath'] / self.tgzname)]
+        shellargs = ['tar', '-xjf', str(self['distpath'] / self.tgzname)]
         runtime.shell(shellargs, merge_output=True)
 
     def _run_dpkg(self, runtime):

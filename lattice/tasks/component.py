@@ -67,15 +67,18 @@ class StandardAssembler(ComponentAssembler):
     def get_version(self, component):
         return self.repository.get_current_version()
 
-    def prepare_source(self, runtime, component, sourcepath, repodir):
+    def prepare_source(self, runtime, component, repodir):
         try:
             metadata = component['repository']
         except KeyError:
             raise TaskError('invalid repository metadata')
 
+        sourcepath = uniqpath(runtime.curdir, 'src')
         self.repository = Repository.instantiate(metadata['type'], str(sourcepath),
             runtime=runtime, cachedir=repodir)
+
         self.repository.checkout(metadata)
+        return sourcepath
 
 class AssembleComponent(ComponentTask):
     name = 'lattice.component.assemble'
@@ -103,14 +106,14 @@ class AssembleComponent(ComponentTask):
         distpath = (self['distpath'] or (runtime.curdir / 'dist')).abspath()
         distpath.makedirs_p()
 
-        sourcepath = uniqpath(runtime.curdir, 'src')
-        assembler.prepare_source(runtime, component, sourcepath, self['repodir'])
+        curdir = assembler.prepare_source(runtime, component, sourcepath, self['repodir'])
+        if curdir:
+            curdir = runtime.chdir(curdir)
 
         version = assembler.get_version(component)
         if component['version'] == 'HEAD':
             component['version'] = version
 
-        curdir = runtime.chdir(sourcepath)
         built = self['built']
         building = self._must_build(component, built)
 
@@ -136,7 +139,8 @@ class AssembleComponent(ComponentTask):
                     path=self['path'], distpath=distpath, specification=component,
                     target=self['target'], cachedir=cachedir, timestamp=timestamp)
 
-        runtime.chdir(curdir)
+        if curdir:
+            runtime.chdir(curdir)
         if cachedir and not component.get('nocache', False):
             tarpath.copy2(cachedir)
 
