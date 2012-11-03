@@ -63,7 +63,11 @@ class BuildDeb(ComponentTask):
         
         path('%s/control' % str(controldir)).write_bytes(controlfile)
 
-        build = self.build
+        try:
+            build = self.build
+        except TaskError:
+            build = {}
+
         for file_token, script_token, script_name in self.SCRIPTS:
             script = None
             if file_token in build:
