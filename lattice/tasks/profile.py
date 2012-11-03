@@ -81,7 +81,7 @@ class BuildProfile(Task):
         runtime.execute('lattice.component.assemble', environ=self['environ'],
             distpath=self['distpath'], name=name, path=self['path'], specification=component,
             target=self['target'], cachedir=self['cachedir'], post_tasks=self['post_tasks'],
-            built=False, timestamp=timestamp, assembler=assembler)
+            built=None, timestamp=timestamp, assembler=assembler)
 
 class ManifestComponentAssembler(ComponentAssembler):
     def __init__(self, profile):
