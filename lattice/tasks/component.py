@@ -56,7 +56,7 @@ class ComponentAssembler(object):
     def get_version(self, component):
         raise NotImplementedError()
 
-    def prepare_source(self, runtime, component, sourcepath, repodir):
+    def prepare_source(self, runtime, component, repodir):
         pass
 
 class StandardAssembler(ComponentAssembler):
