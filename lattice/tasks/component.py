@@ -100,7 +100,7 @@ class AssembleComponent(ComponentTask):
         component = self['specification']
         environ = self.environ
 
-        distpath = ((self['distpath'] or runtime.curdir) / 'dist').abspath()
+        distpath = (self['distpath'] or (runtime.curdir / 'dist')).abspath()
         distpath.makedirs_p()
 
         sourcepath = uniqpath(runtime.curdir, 'src')

@@ -21,12 +21,12 @@ class BuildProfile(Task):
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonnull=True),
         'environ': Map(Text(nonnull=True)),
+        'manifest': Boolean(default=False),
         'path': Text(nonempty=True),
         'post_tasks': Sequence(Text(nonnull=True), nonnull=True),
         'profile': Path(nonnull=True),
         'specification': Field(hidden=True),
         'target': Text(nonnull=True, default='default'),
-        'build_version': Boolean(default=False),
     }
 
     def run(self, runtime):
@@ -50,8 +50,8 @@ class BuildProfile(Task):
         for component in profile['components']:
             self._build_component(runtime, component, built, timestamp)
 
-        if self['build_version']:
-            self._build_version(runtime, profile, timestamp)
+        if self['manifest']:
+            self._build_manifest(runtime, profile, timestamp)
 
     def _build_component(self, runtime, component, built, timestamp):
         target = self['target']
@@ -70,16 +70,17 @@ class BuildProfile(Task):
 
         runtime.chdir(curdir)
 
-    def _build_version(self, runtime, profile, timestamp):
-        assembler = VersionComponentAssembler(profile)
-        component = {'name': 'manifest', 'version': profile['version'], 'nocache': True}
-        runtime.execute(
-                'lattice.component.assemble', environ=self['environ'], distpath=self['distpath'],
-                name=component['name'], path=self['path'],
-                specification=component, target=self['target'], cachedir=self['cachedir'],
-                post_tasks=self['post_tasks'], built=False, timestamp=timestamp, assembler=assembler)
+    def _build_manifest(self, runtime, profile, timestamp):
+        assembler = ManifestComponentAssembler(profile)
+        name = '%s-manifest' % profile['name']
 
-class VersionComponentAssembler(ComponentAssembler):
+        component = {'name': name, 'version': profile['version'], 'nocache': True}
+        runtime.execute('lattice.component.assemble', environ=self['environ'],
+            distpath=self['distpath'], name=name, path=self['path'], specification=component,
+            target=self['target'], cachedir=self['cachedir'], post_tasks=self['post_tasks'],
+            built=False, timestamp=timestamp, assembler=assembler)
+
+class ManifestComponentAssembler(ComponentAssembler):
     def __init__(self, profile):
         self.profile = profile
 
