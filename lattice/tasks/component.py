@@ -106,7 +106,7 @@ class AssembleComponent(ComponentTask):
         distpath = (self['distpath'] or (runtime.curdir / 'dist')).abspath()
         distpath.makedirs_p()
 
-        curdir = assembler.prepare_source(runtime, component, sourcepath, self['repodir'])
+        curdir = assembler.prepare_source(runtime, component, self['repodir'])
         if curdir:
             curdir = runtime.chdir(curdir)
 
