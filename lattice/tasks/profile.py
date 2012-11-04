@@ -19,9 +19,10 @@ class BuildProfile(Task):
     description = 'builds a lattice profile'
     parameters = {
         'cachedir': Path(nonnull=True),
+        'build_manifest_component': Boolean(default=False),
         'distpath': Path(nonnull=True),
         'environ': Map(Text(nonnull=True)),
-        'manifest': Boolean(default=False),
+        'override_version': Text(),
         'path': Text(nonempty=True),
         'post_tasks': Sequence(Text(nonnull=True), nonnull=True),
         'profile': Path(nonnull=True),
@@ -41,6 +42,9 @@ class BuildProfile(Task):
             else:
                 raise TaskError('nope')
 
+        if self['override_version']:
+            profile['version'] = self['override_version']
+
         buildpath = path(self['path'])
         buildpath.mkdir()
 
@@ -50,7 +54,7 @@ class BuildProfile(Task):
         for component in profile['components']:
             self._build_component(runtime, component, built, timestamp)
 
-        if self['manifest']:
+        if self['build_manifest_component']:
             self._build_manifest(runtime, profile, timestamp)
 
     def _build_component(self, runtime, component, built, timestamp):
