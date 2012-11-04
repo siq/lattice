@@ -86,7 +86,7 @@ class BuildProfile(Task):
         runtime.chdir(curdir)
 
     def _build_manifest(self, runtime, profile, timestamp, manifest):
-        assembler = ManifestComponentAssembler(profile, manifest)
+        assembler = ManifestComponentAssembler(profile, manifest, timestamp)
         name = '%s-manifest' % profile['name']
 
         component = {'name': name, 'version': profile['version'], 'nocache': True}
@@ -104,25 +104,30 @@ class BuildProfile(Task):
         filename.write_bytes('\n'.join(output))
 
 class ManifestComponentAssembler(ComponentAssembler):
-    def __init__(self, profile, manifest):
-        self.profile = profile
+    def __init__(self, profile, manifest, timestamp):
         self.manifest = manifest
+        self.profile = profile
+        self.timestamp = timestamp
 
     def build(self, runtime, name, buildpath, target, environ, component):
         profile = self.profile
         buildpath = path(buildpath)
 
-        versionpath = buildpath / 'siq/version'
-        versionpath.write_bytes(profile['version'])
+        version_file = self._build_version_file()
+        (buildpath / 'siq/version').write_bytes(version_file)
 
-        manifest = []
-        for component in self.manifest:
-            manifest.append('%(name)s %(version)s' % component)
-
-        manifestpath = buildpath / 'siq/manifest'
-        manifestpath.write_bytes('\n'.join(manifest))
+        manifest_file = self._build_manifest_file()
+        (buildpath / 'siq/manifest').write_bytes(manifest_file)
 
     def get_version(self, component):
         return self.profile['version']
 
-    
+    def _build_manifest_file(self):
+        manifest = []
+        for component in self.manifest:
+            manifest.append('%(name)s:%(version)s' % component)
+        return '\n'.join(manifest)
+
+    def _build_version_file(self):
+        timestamp = self.timestamp.stftime('%Y-%m-%dT%H:%M:%SZ')
+        return '%s (%s)\n' % (self.profile['version'], timestamp)
