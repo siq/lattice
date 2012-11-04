@@ -124,8 +124,12 @@ class BuildProfile(Task):
         if not filename:
             return {}
 
+        filename = path(filename)
+        if not filename.exists():
+            return {}
+
         last_manifest = {}
-        for line in path(filename).bytes().strip().split('\n'):
+        for line in filename.bytes().strip().split('\n'):
             name, version, hash = line.split(':')
             last_manifest[name] = hash
         return last_manifest
