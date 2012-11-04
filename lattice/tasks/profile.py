@@ -21,6 +21,7 @@ class BuildProfile(Task):
         'cachedir': Path(nonnull=True),
         'build_manifest_component': Boolean(default=False),
         'distpath': Path(nonnull=True),
+        'dump_manifest': Text(),
         'environ': Map(Text(nonnull=True)),
         'override_version': Text(),
         'path': Text(nonempty=True),
@@ -51,7 +52,7 @@ class BuildProfile(Task):
         timestamp = datetime.utcnow()
 
         manifest = None
-        if self['build_manifest_component']:
+        if self['build_manifest_component'] or self['dump_manifest']:
             manifest = []
 
         built = []
@@ -60,6 +61,8 @@ class BuildProfile(Task):
 
         if self['build_manifest_component']:
             self._build_manifest(runtime, profile, timestamp, manifest)
+        if self['dump_manifest']:
+            self._dump_manifest(manifest, self['dump_manifest'])
 
     def _build_component(self, runtime, component, built, timestamp, manifest):
         target = self['target']
@@ -91,6 +94,14 @@ class BuildProfile(Task):
             distpath=self['distpath'], name=name, path=self['path'], specification=component,
             target=self['target'], cachedir=self['cachedir'], post_tasks=self['post_tasks'],
             built=None, timestamp=timestamp, assembler=assembler)
+
+    def _dump_manifest(self, manifest, filename):
+        output = []
+        for component in manifest:
+            output.append('%(name)s:%(version)s:%(hash)s' % component)
+
+        filename = path(filename)
+        filename.write_bytes('\n'.join(output))
 
 class ManifestComponentAssembler(ComponentAssembler):
     def __init__(self, profile, manifest):
