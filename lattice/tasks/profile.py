@@ -101,7 +101,7 @@ class BuildProfile(Task):
             output.append('%(name)s:%(version)s:%(hash)s' % component)
 
         filename = path(filename)
-        filename.write_bytes('\n'.join(output))
+        filename.write_bytes('\n'.join(output) + '\n')
 
 class ManifestComponentAssembler(ComponentAssembler):
     def __init__(self, profile, manifest, timestamp):
@@ -126,7 +126,7 @@ class ManifestComponentAssembler(ComponentAssembler):
         manifest = []
         for component in self.manifest:
             manifest.append('%(name)s:%(version)s' % component)
-        return '\n'.join(manifest)
+        return '\n'.join(manifest) + '\n'
 
     def _build_version_file(self):
         timestamp = self.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
