@@ -102,7 +102,7 @@ class ManifestComponentAssembler(ComponentAssembler):
         buildpath = path(buildpath)
 
         versionpath = buildpath / 'siq/version'
-        versionpath.write(profile['version'])
+        versionpath.write_bytes(profile['version'])
 
         manifest = []
         for component in self.manifest:
