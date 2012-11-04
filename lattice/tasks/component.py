@@ -76,7 +76,10 @@ class StandardAssembler(ComponentAssembler):
     def populate_commit_log(self, commit_log, component, starting_commit):
         heading = '%(name)s %(version)s' % component
         commit_log.append('%s\n%s\n' % (heading, '-' * len(heading)))
-        commit_log.append(self.repository.get_commit_log(starting_commit))
+
+        commits = self.repository.get_commit_log(starting_commit)
+        if commits:
+            commit_log.append(commits)
 
     def populate_manifest(self, manifest, component):
         entry = {'name': component['name'], 'version': component['version']}
