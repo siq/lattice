@@ -75,6 +75,14 @@ class GitRepository(Repository):
         if specification:
             return specification.get_component(name)
 
+    def get_commit_log(self, starting_commit=None):
+        tokens = ['log']
+        if starting_commit:
+            tokens.append('%s..' % starting_commit)
+
+        process = self._run_command(tokens)
+        return process.stdout
+
     def get_current_version(self, unknown_version='0.0.0'):
         process = self._run_command(['describe', '--tags'], passive=True)
         if process.returncode == 0:
@@ -92,7 +100,7 @@ class GitRepository(Repository):
         return '%s+%s' % (unknown_version, process.stdout.strip())
 
     def get_current_hash(self):
-        process = self._run_command(['describe', '--long', '--abbrev=64'], passive=True)
+        process = self._run_command(['describe', '--long', '--abbrev=64'])
         return process.stdout.strip().split('-')[-1]
 
     @classmethod
@@ -163,6 +171,9 @@ class SubversionRepository(Repository):
         fingerprint = root / '.svn'
         return fingerprint.exists() and fingerprint.isdir()
     
+    def get_commit_log(self, starting_commit=None):
+        return ''
+
     def get_current_version(self, unknown_version='0.0.0'):
         process = self._run_command(['.'], cmd='svnversion')
         if process.returncode == 0:

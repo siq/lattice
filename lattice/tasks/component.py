@@ -56,6 +56,9 @@ class ComponentAssembler(object):
     def get_version(self, component):
         raise NotImplementedError()
 
+    def populate_commit_log(self, commit_log, component, starting_commit):
+        pass
+
     def populate_manifest(self, manifest, component):
         pass
 
@@ -69,6 +72,10 @@ class StandardAssembler(ComponentAssembler):
 
     def get_version(self, component):
         return self.repository.get_current_version()
+
+    def populate_commit_log(self, commit_log, component, starting_commit):
+        commit_log.append('%(name)s %(version)s\n' % component)
+        commit_log.append(self.repository.get_commit_log(starting_commit))
 
     def populate_manifest(self, manifest, component):
         entry = {'name': component['name'], 'version': component['version']}
@@ -95,11 +102,13 @@ class AssembleComponent(ComponentTask):
         'assembler': Field(hidden=True),
         'built': Field(hidden=True),
         'cachedir': Path(nonnull=True),
+        'commit_log': Field(hidden=True),
         'distpath': Path(nonnull=True),
         'manifest': Field(hidden=True),
         'post_tasks': Sequence(Text(nonnull=True)),
         'repodir': Path(nonnull=True),
         'revision': Text(nonnull=True),
+        'starting_commit': Field(hidden=True),
         'tarfile': Boolean(default=False),
         'url': Text(nonnull=True),
     }
@@ -151,6 +160,10 @@ class AssembleComponent(ComponentTask):
         manifest = self['manifest']
         if manifest is not None:
             assembler.populate_manifest(manifest, component)
+
+        commit_log = self['commit_log']
+        if commit_log is not None:
+            assembler.populate_commit_log(commit_log, component, self['starting_commit'])
 
         if curdir:
             runtime.chdir(curdir)

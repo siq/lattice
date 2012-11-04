@@ -4,7 +4,6 @@ from bake import *
 from scheme import *
 from lattice.tasks.component import ComponentAssembler
 
-
 class AssembleProfile(Task):
     name = 'lattice.profile.assemble'
     description = 'assembles a lattice profile'
@@ -21,8 +20,10 @@ class BuildProfile(Task):
         'cachedir': Path(nonnull=True),
         'build_manifest_component': Boolean(default=False),
         'distpath': Path(nonnull=True),
+        'dump_commit_log': Text(),
         'dump_manifest': Text(),
         'environ': Map(Text(nonnull=True)),
+        'last_manifest': Text(),
         'override_version': Text(),
         'path': Text(nonempty=True),
         'post_tasks': Sequence(Text(nonnull=True), nonnull=True),
@@ -50,6 +51,11 @@ class BuildProfile(Task):
         buildpath.mkdir()
 
         timestamp = datetime.utcnow()
+        last_manifest = self._parse_last_manifest()
+
+        commit_log = None
+        if self['dump_commit_log']:
+            commit_log = []
 
         manifest = None
         if self['build_manifest_component'] or self['dump_manifest']:
@@ -57,14 +63,20 @@ class BuildProfile(Task):
 
         built = []
         for component in profile['components']:
-            self._build_component(runtime, component, built, timestamp, manifest)
+            starting_commit = last_manifest.get(component['name'])
+            self._build_component(runtime, component, built, timestamp, manifest,
+                commit_log, starting_commit)
 
         if self['build_manifest_component']:
             self._build_manifest(runtime, profile, timestamp, manifest)
         if self['dump_manifest']:
             self._dump_manifest(manifest, self['dump_manifest'])
+        if self['dump_commit_log']:
+            self._dump_commit_log(commit_log, self['dump_commit_log'])
 
-    def _build_component(self, runtime, component, built, timestamp, manifest):
+    def _build_component(self, runtime, component, built, timestamp, manifest,
+            commit_log, starting_commit):
+
         target = self['target']
         if 'builds' not in component or target not in component['builds']:
             runtime.info('ignoring %s (does not implement target %r)'
@@ -81,7 +93,7 @@ class BuildProfile(Task):
             distpath=self['distpath'], name=component['name'], path=self['path'],
             specification=component, target=self['target'], cachedir=self['cachedir'],
             post_tasks=self['post_tasks'], built=built, timestamp=timestamp,
-            manifest=manifest)
+            manifest=manifest, commit_log=commit_log, starting_commit=starting_commit)
 
         runtime.chdir(curdir)
 
@@ -95,6 +107,10 @@ class BuildProfile(Task):
             target=self['target'], cachedir=self['cachedir'], post_tasks=self['post_tasks'],
             built=None, timestamp=timestamp, assembler=assembler)
 
+    def _dump_commit_log(self, commit_log, filename):
+        filename = path(filename)
+        file.write_bytes('\n'.join(commit_log) + '\n')
+
     def _dump_manifest(self, manifest, filename):
         output = []
         for component in manifest:
@@ -102,6 +118,17 @@ class BuildProfile(Task):
 
         filename = path(filename)
         filename.write_bytes('\n'.join(output) + '\n')
+
+    def _parse_last_manifest(self):
+        filename = self['last_manifest']
+        if not filename:
+            return {}
+
+        last_manifest = {}
+        for line in path(filename).bytes().strip().split('\n'):
+            name, version, hash = line.split(':')
+            last_manifest[name] = hash
+        return last_manifest
 
 class ManifestComponentAssembler(ComponentAssembler):
     def __init__(self, profile, manifest, timestamp):
