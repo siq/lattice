@@ -80,8 +80,9 @@ class GitRepository(Repository):
         if starting_commit:
             tokens.append('%s..' % starting_commit)
 
-        process = self._run_command(tokens)
-        return process.stdout
+        process = self._run_command(tokens, passive=True)
+        if process.returncode == 0:
+            return process.stdout
 
     def get_current_version(self, unknown_version='0.0.0'):
         process = self._run_command(['describe', '--tags'], passive=True)
@@ -101,7 +102,7 @@ class GitRepository(Repository):
 
     def get_current_hash(self):
         process = self._run_command(['describe', '--long', '--abbrev=64'])
-        return process.stdout.strip().split('-')[-1]
+        return process.stdout.strip().split('-')[-1][1:]
 
     @classmethod
     def is_repository(cls, root):
