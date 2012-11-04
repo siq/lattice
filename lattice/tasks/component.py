@@ -80,6 +80,8 @@ class StandardAssembler(ComponentAssembler):
         commits = self.repository.get_commit_log(starting_commit)
         if commits:
             commit_log.append(commits)
+        else:
+            commit_log.append('no changes\n')
 
     def populate_manifest(self, manifest, component):
         entry = {'name': component['name'], 'version': component['version']}
