@@ -56,6 +56,9 @@ class ComponentAssembler(object):
     def get_version(self, component):
         raise NotImplementedError()
 
+    def populate_manifest(self, manifest, component):
+        pass
+
     def prepare_source(self, runtime, component, repodir):
         pass
 
@@ -66,6 +69,9 @@ class StandardAssembler(ComponentAssembler):
 
     def get_version(self, component):
         return self.repository.get_current_version()
+
+    def populate_manifest(self, manifest, component):
+        manifest.append({'name': component['name'], 'version': component['version']})
 
     def prepare_source(self, runtime, component, repodir):
         try:
@@ -88,6 +94,7 @@ class AssembleComponent(ComponentTask):
         'built': Field(hidden=True),
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonnull=True),
+        'manifest': Field(hidden=True),
         'post_tasks': Sequence(Text(nonnull=True)),
         'repodir': Path(nonnull=True),
         'revision': Text(nonnull=True),
@@ -138,6 +145,10 @@ class AssembleComponent(ComponentTask):
                 runtime.execute(post_task, environ=self['environ'], name=self['name'],
                     path=self['path'], distpath=distpath, specification=component,
                     target=self['target'], cachedir=cachedir, timestamp=timestamp)
+
+        manifest = self['manifest']
+        if manifest is not None:
+            assembler.populate_manifest(manifest, component)
 
         if curdir:
             runtime.chdir(curdir)

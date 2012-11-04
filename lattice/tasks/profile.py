@@ -50,14 +50,18 @@ class BuildProfile(Task):
 
         timestamp = datetime.utcnow()
 
+        manifest = None
+        if self['build_manifest_component']:
+            manifest = []
+
         built = []
         for component in profile['components']:
-            self._build_component(runtime, component, built, timestamp)
+            self._build_component(runtime, component, built, timestamp, manifest)
 
         if self['build_manifest_component']:
-            self._build_manifest(runtime, profile, timestamp)
+            self._build_manifest(runtime, profile, timestamp, manifest)
 
-    def _build_component(self, runtime, component, built, timestamp):
+    def _build_component(self, runtime, component, built, timestamp, manifest):
         target = self['target']
         if 'builds' not in component or target not in component['builds']:
             runtime.info('ignoring %s (does not implement target %r)'
@@ -73,12 +77,13 @@ class BuildProfile(Task):
         runtime.execute('lattice.component.assemble', environ=self['environ'],
             distpath=self['distpath'], name=component['name'], path=self['path'],
             specification=component, target=self['target'], cachedir=self['cachedir'],
-            post_tasks=self['post_tasks'], built=built, timestamp=timestamp)
+            post_tasks=self['post_tasks'], built=built, timestamp=timestamp,
+            manifest=manifest)
 
         runtime.chdir(curdir)
 
-    def _build_manifest(self, runtime, profile, timestamp):
-        assembler = ManifestComponentAssembler(profile)
+    def _build_manifest(self, runtime, profile, timestamp, manifest):
+        assembler = ManifestComponentAssembler(profile, manifest)
         name = '%s-manifest' % profile['name']
 
         component = {'name': name, 'version': profile['version'], 'nocache': True}
@@ -88,15 +93,23 @@ class BuildProfile(Task):
             built=None, timestamp=timestamp, assembler=assembler)
 
 class ManifestComponentAssembler(ComponentAssembler):
-    def __init__(self, profile):
+    def __init__(self, profile, manifest):
         self.profile = profile
+        self.manifest = manifest
 
     def build(self, runtime, name, buildpath, target, environ, component):
+        profile = self.profile
         buildpath = path(buildpath)
+
         versionpath = buildpath / 'siq/version'
-        versionpath.write_bytes(self.profile['version'])
+        versionpath.write(profile['version'])
+
+        manifest = []
+        for component in self.manifest:
+            manifest.append('%(name)s %(version)s' % component)
+
         manifestpath = buildpath / 'siq/manifest'
-        manifestpath.write_bytes('testingtesting')
+        manifestpath.write_bytes('\n'.join(manifest))
 
     def get_version(self, component):
         return self.profile['version']
