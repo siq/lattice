@@ -129,5 +129,5 @@ class ManifestComponentAssembler(ComponentAssembler):
         return '\n'.join(manifest)
 
     def _build_version_file(self):
-        timestamp = self.timestamp.stftime('%Y-%m-%dT%H:%M:%SZ')
+        timestamp = self.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
         return '%s (%s)\n' % (self.profile['version'], timestamp)
