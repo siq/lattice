@@ -109,7 +109,7 @@ class BuildProfile(Task):
 
     def _dump_commit_log(self, commit_log, filename):
         filename = path(filename)
-        file.write_bytes('\n'.join(commit_log) + '\n')
+        filename.write_bytes('\n'.join(commit_log) + '\n')
 
     def _dump_manifest(self, manifest, filename):
         output = []
