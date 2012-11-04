@@ -71,7 +71,9 @@ class StandardAssembler(ComponentAssembler):
         return self.repository.get_current_version()
 
     def populate_manifest(self, manifest, component):
-        manifest.append({'name': component['name'], 'version': component['version']})
+        entry = {'name': component['name'], 'version': component['version']}
+        entry['hash'] = self.repository.get_current_hash()
+        manifest.append(entry)
 
     def prepare_source(self, runtime, component, repodir):
         try:

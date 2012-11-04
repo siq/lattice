@@ -91,6 +91,10 @@ class GitRepository(Repository):
         process = self._run_command(['rev-list', '--all', '--count'])
         return '%s+%s' % (unknown_version, process.stdout.strip())
 
+    def get_current_hash(self):
+        process = self._run_command(['describe', '--long', '--abbrev=64'], passive=True)
+        return process.stdout.strip().split('-')[-1]
+
     @classmethod
     def is_repository(cls, root):
         fingerprint = root / '.git'
@@ -172,8 +176,8 @@ class SubversionRepository(Repository):
             else:
                 return version
 
-        #process = self._run_command(['rev-list', '--all', '--count'])
-        #return '%s+%s' % (unknown_version, process.stdout.strip())
+    def get_current_hash(self):
+        return None
 
     def _run_command(self, tokens, cwd=True, passthrough=False, root=None, cmd='svn'):
         process = Process([cmd] + tokens)
