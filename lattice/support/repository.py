@@ -101,8 +101,8 @@ class GitRepository(Repository):
         return '%s+%s' % (unknown_version, process.stdout.strip())
 
     def get_current_hash(self):
-        process = self._run_command(['describe', '--long', '--abbrev=64'])
-        return process.stdout.strip().split('-')[-1][1:]
+        process = self._run_command(['log', '-1', '--pretty=format:%H'])
+        return process.stdout.strip()
 
     @classmethod
     def is_repository(cls, root):
