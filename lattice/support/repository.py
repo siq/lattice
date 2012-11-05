@@ -189,7 +189,7 @@ class SubversionRepository(Repository):
                 return version
 
     def get_current_hash(self):
-        return None
+        return ''
 
     def _run_command(self, tokens, cwd=True, passthrough=False, root=None, cmd='svn'):
         process = Process([cmd] + tokens)
