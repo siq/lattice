@@ -144,6 +144,9 @@ class ManifestComponentAssembler(ComponentAssembler):
         profile = self.profile
         buildpath = path(buildpath)
 
+        siqdir = buildpath / 'siq'
+        siqdir.mkdir_p()
+
         version_file = self._build_version_file()
         (buildpath / 'siq/version').write_bytes(version_file)
 
