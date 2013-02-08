@@ -78,7 +78,8 @@ class BuildProfile(Task):
             commit_log, starting_commit):
 
         target = self['target']
-        if 'builds' not in component or target not in component['builds']:
+        if (('builds' not in component or target not in component['builds'])
+                and not component.get('ephemeral')):
             runtime.info('ignoring %s (does not implement target %r)'
                 % (component['name'], target))
 
@@ -154,7 +155,10 @@ class ManifestComponentAssembler(ComponentAssembler):
         (buildpath / 'siq/manifest').write_bytes(manifest_file)
 
     def get_version(self, component):
-        return self.profile['version']
+        version = self.profile['version']
+        if version.startswith('MASTER+'):
+            version = version[7:]
+        return version
 
     def _build_manifest_file(self):
         manifest = []
