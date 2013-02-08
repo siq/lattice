@@ -102,7 +102,9 @@ class BuildProfile(Task):
         assembler = ManifestComponentAssembler(profile, manifest, timestamp)
         name = '%s-manifest' % profile['name']
 
-        component = {'name': name, 'version': profile['version'], 'nocache': True}
+        version = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+
+        component = {'name': name, 'version': version, 'nocache': True}
         runtime.execute('lattice.component.assemble', environ=self['environ'],
             distpath=self['distpath'], name=name, path=self['path'], specification=component,
             target=self['target'], cachedir=self['cachedir'], post_tasks=self['post_tasks'],
@@ -155,10 +157,7 @@ class ManifestComponentAssembler(ComponentAssembler):
         (buildpath / 'siq/manifest').write_bytes(manifest_file)
 
     def get_version(self, component):
-        version = self.profile['version']
-        if version.startswith('MASTER+'):
-            version = version[7:]
-        return version
+        return self.profile['version']
 
     def _build_manifest_file(self):
         manifest = []
