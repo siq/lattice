@@ -7,6 +7,7 @@ Schema = Structure({
     'components': Sequence(Structure(nonnull=True, structure={
         'name': Token(segments=1, nonempty=True),
         'version': Token(segments=1, nonnull=True),
+        'ephemeral': Boolean(default=False),
         'volatile': Boolean(default=False),
         'description': Text(),
         'dependencies': Sequence(Text(nonnull=True), nonnull=True),

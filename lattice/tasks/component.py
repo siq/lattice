@@ -138,6 +138,17 @@ class AssembleComponent(ComponentTask):
         if component['version'] == 'HEAD':
             component['version'] = version
 
+        manifest = self['manifest']
+        if manifest is not None:
+            assembler.populate_manifest(manifest, component)
+
+        commit_log = self['commit_log']
+        if commit_log is not None:
+            assembler.populate_commit_log(commit_log, component, self['starting_commit'])
+
+        if component.get('ephemeral'):
+            return
+
         built = self['built']
         building = self._must_build(component, built)
 
@@ -162,14 +173,6 @@ class AssembleComponent(ComponentTask):
                 runtime.execute(post_task, environ=self['environ'], name=self['name'],
                     path=self['path'], distpath=distpath, specification=component,
                     target=self['target'], cachedir=cachedir, timestamp=timestamp)
-
-        manifest = self['manifest']
-        if manifest is not None:
-            assembler.populate_manifest(manifest, component)
-
-        commit_log = self['commit_log']
-        if commit_log is not None:
-            assembler.populate_commit_log(commit_log, component, self['starting_commit'])
 
         if curdir:
             runtime.chdir(curdir)
