@@ -11,6 +11,7 @@ Schema = Structure({
         'volatile': Boolean(default=False),
         'description': Text(),
         'dependencies': Sequence(Text(nonnull=True), nonnull=True),
+        'ephemeral-dependencies': Sequence(Text(nonnull=True), nonnull=True),
         'builds': Map(Structure({
             'command': Text(nonnull=True),
             'script': Text(nonnull=True),

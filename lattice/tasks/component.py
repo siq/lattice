@@ -215,11 +215,15 @@ class AssembleComponent(ComponentTask):
         if not built:
             return False
 
-        dependencies = component.get('dependencies')
-        if not dependencies:
+        required = []
+        if 'dependencies' in component:
+            required.extend(component['dependencies'])
+        if 'ephemeral-dependencies' in component:
+            required.extend(component['ephemeral-dependencies'])
+        if not required:
             return False
 
-        for dependency in dependencies:
+        for dependency in required:
             if dependency in built:
                 return True
 
