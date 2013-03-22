@@ -146,10 +146,14 @@ class AssembleComponent(ComponentTask):
         if commit_log is not None:
             assembler.populate_commit_log(commit_log, component, self['starting_commit'])
 
+        built = self['built']
         if component.get('ephemeral'):
+            if built is not None and not component.get('independent'):
+                built.append(component['name'])
+            if curdir:
+                runtime.chdir(curdir)
             return
 
-        built = self['built']
         building = self._must_build(component, built)
 
         cachedir = self['cachedir']
