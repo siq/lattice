@@ -80,8 +80,10 @@ class StandardAssembler(ComponentAssembler):
         commits = self.repository.get_commit_log(starting_commit)
         if commits:
             commit_log.append(commits)
+            return True
         else:
             commit_log.append('no changes\n')
+            return False
 
     def populate_manifest(self, manifest, component):
         entry = {'name': component['name'], 'version': component['version']}
@@ -143,12 +145,15 @@ class AssembleComponent(ComponentTask):
             assembler.populate_manifest(manifest, component)
 
         commit_log = self['commit_log']
+        has_commits = True
+
         if commit_log is not None:
-            assembler.populate_commit_log(commit_log, component, self['starting_commit'])
+            has_commits = assembler.populate_commit_log(commit_log, component,
+                self['starting_commit'])
 
         built = self['built']
         if component.get('ephemeral'):
-            if built is not None and not component.get('independent'):
+            if built is not None and not component.get('independent') and has_commits:
                 built.append(component['name'])
             if curdir:
                 runtime.chdir(curdir)
