@@ -28,6 +28,7 @@ class BuildProfile(Task):
         'path': Text(nonempty=True),
         'post_tasks': Sequence(Text(nonnull=True), nonnull=True),
         'profile': Path(nonnull=True),
+        'repodir': Path(nonnull=True),
         'specification': Field(hidden=True),
         'target': Text(nonnull=True, default='default'),
     }
@@ -94,7 +95,8 @@ class BuildProfile(Task):
             distpath=self['distpath'], name=component['name'], path=self['path'],
             specification=component, target=self['target'], cachedir=self['cachedir'],
             post_tasks=self['post_tasks'], built=built, timestamp=timestamp,
-            manifest=manifest, commit_log=commit_log, starting_commit=starting_commit)
+            manifest=manifest, commit_log=commit_log, starting_commit=starting_commit,
+            repodir=self['repodir'])
 
         runtime.chdir(curdir)
 
