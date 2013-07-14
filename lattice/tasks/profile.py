@@ -2,6 +2,8 @@ from datetime import datetime
 
 from bake import *
 from scheme import *
+
+from lattice.support.buildfile import BuildFile
 from lattice.tasks.component import ComponentAssembler
 
 class AssembleProfile(Task):
@@ -18,6 +20,7 @@ class BuildProfile(Task):
     description = 'builds a lattice profile'
     parameters = {
         'cachedir': Path(nonnull=True),
+        'buildfile': Path(),
         'build_manifest_component': Boolean(default=False),
         'distpath': Path(nonnull=True),
         'dump_commit_log': Text(),
@@ -25,6 +28,7 @@ class BuildProfile(Task):
         'environ': Map(Text(nonnull=True)),
         'last_manifest': Text(),
         'override_version': Text(),
+        'overwrite_existing': Boolean(default=False),
         'path': Text(nonempty=True),
         'post_tasks': Sequence(Text(nonnull=True), nonnull=True),
         'profile': Path(nonnull=True),
@@ -49,7 +53,15 @@ class BuildProfile(Task):
             profile['version'] = self['override_version']
 
         buildpath = path(self['path'])
-        buildpath.mkdir()
+        if buildpath.exists():
+            if not self['overwrite_existing']:
+                raise TaskError('buildpath already exists, aborting')
+        else:
+            buildpath.mkdir()
+
+        buildfile = None
+        if self['buildfile']:
+            buildfile = BuildFile(self['buildfile'])
 
         timestamp = datetime.utcnow()
         last_manifest = self._parse_last_manifest()
@@ -66,8 +78,10 @@ class BuildProfile(Task):
         for component in profile['components']:
             starting_commit = last_manifest.get(component['name'])
             self._build_component(runtime, component, built, timestamp, manifest,
-                commit_log, starting_commit)
+                commit_log, starting_commit, buildfile)
 
+        if buildfile:
+            buildfile.write()
         if self['build_manifest_component']:
             self._build_manifest(runtime, profile, timestamp, manifest)
         if self['dump_manifest']:
@@ -76,7 +90,7 @@ class BuildProfile(Task):
             self._dump_commit_log(commit_log, self['dump_commit_log'])
 
     def _build_component(self, runtime, component, built, timestamp, manifest,
-            commit_log, starting_commit):
+            commit_log, starting_commit, buildfile):
 
         target = self['target']
         if (('builds' not in component or target not in component['builds'])
@@ -96,7 +110,7 @@ class BuildProfile(Task):
             specification=component, target=self['target'], cachedir=self['cachedir'],
             post_tasks=self['post_tasks'], built=built, timestamp=timestamp,
             manifest=manifest, commit_log=commit_log, starting_commit=starting_commit,
-            repodir=self['repodir'])
+            repodir=self['repodir'], buildfile=buildfile)
 
         runtime.chdir(curdir)
 

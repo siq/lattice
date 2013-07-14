@@ -108,6 +108,7 @@ class AssembleComponent(ComponentTask):
     description = 'assembles a lattice-based component'
     parameters = {
         'assembler': Field(hidden=True),
+        'buildfile': Field(hidden=True),
         'built': Field(hidden=True),
         'cachedir': Path(nonnull=True),
         'commit_log': Field(hidden=True),
@@ -159,10 +160,17 @@ class AssembleComponent(ComponentTask):
                 runtime.chdir(curdir)
             return
 
-        building = self._must_build(component, built)
-
+        buildfile = self['buildfile']
         cachedir = self['cachedir']
-        if cachedir:
+
+        building = self._must_build(component, built)
+        if buildfile:
+            if not building:
+                building = (buildfile.get(component['name']) != component['version'])
+                if not building:
+                    runtime.report('skipping build due to buildfile')
+            buildfile.set(component['name'], component['version'])
+        elif cachedir:
             cachedir.makedirs_p()
             self['tarfile'] = True
             if not building:
