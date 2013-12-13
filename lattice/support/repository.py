@@ -176,9 +176,9 @@ class SubversionRepository(Repository):
         return ''
 
     def get_current_version(self, unknown_version='0.0.0'):
-        process = self._run_command(['.'], cmd='svnversion')
+        process = self._run_command(['log', '-l', '1', '.'], cmd='svn')
         if process.returncode == 0:
-            version = process.stdout.strip()
+            version = process.stdout.split('\n')[1].split(' ')[0]
             # HACK
             if version[0] == 'r':
                 version = version[1:]
