@@ -89,9 +89,9 @@ class BuildRpm(ComponentTask):
             if file_token in build:
                 scriptpath = path(build[file_token])
                 if scriptpath.exists():
-                    rpmcontent = ['\n', '%%%s' % script_name]
-                    rpmcontent.extend(scriptpath.lines()[1:])
-                    scriptpath.write_lines(rpmcontent)
+                    scontent = ['\n', '%%%s' % script_name]
+                    speccontent.extend(scriptpath.lines()[1:])
+                    scriptpath.write_lines(speccontent)
                     script = scriptpath.bytes()
             elif script_token in build:
                 script = build[script_token]
