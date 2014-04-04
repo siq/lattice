@@ -33,15 +33,14 @@ class BuildRpm(ComponentTask):
         if prefix:
             name = '%s-%s' % (prefix.strip('-'), name)
 
-        if component.get('volatile'):
-            timestamp = self['timestamp']
-            if timestamp:
-                version = '%s-%s' % (version, timestamp.strftime('%Y%m%d%H%M%S'))
-        
         # supplement for rpm's release req
         self.release = component.get('release')
         if self.release:
             self.release = int(self.release) + 1
+        elif component.get('volatile'):
+            timestamp = self['timestamp']
+            if timestamp:
+                self.release = timestamp.strftime('%Y%m%d%H%M%S')
         else:
             self.release = 1
 
@@ -89,7 +88,7 @@ class BuildRpm(ComponentTask):
             if file_token in build:
                 scriptpath = path(build[file_token])
                 if scriptpath.exists():
-                    scontent = ['\n', '%%%s' % script_name]
+                    speccontent = ['\n', '%%%s' % script_name]
                     speccontent.extend(scriptpath.lines()[1:])
                     scriptpath.write_lines(speccontent)
                     script = scriptpath.bytes()
