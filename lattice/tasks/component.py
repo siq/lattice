@@ -119,6 +119,7 @@ class AssembleComponent(ComponentTask):
         'revision': Text(nonnull=True),
         'starting_commit': Field(hidden=True),
         'tarfile': Boolean(default=False),
+        'reportfile': Boolean(default=False),
         'url': Text(nonnull=True),
     }
 
@@ -179,8 +180,9 @@ class AssembleComponent(ComponentTask):
             building = True
 
         tarpath = distpath / self._get_component_tarfile(component)
+        reportpath = distpath / self._get_component_reportfile(component)
         if building:
-            self._run_build(runtime, assembler, component, tarpath)
+            self._run_build(runtime, assembler, component, tarpath, reportpath)
             if built is not None and not component.get('independent'):
                 built.append(component['name'])
 
@@ -211,6 +213,9 @@ class AssembleComponent(ComponentTask):
 
     def _get_component_tarfile(self, component):
         return '%(name)s-%(version)s.tar.bz2' % component
+
+    def _get_component_reportfile(self, component):
+        return '%(name)s-%(version)s_collation-report.txt' % component
 
     def _get_repository_metadata(self, component):
         if component:
@@ -244,7 +249,7 @@ class AssembleComponent(ComponentTask):
             if dependency in built:
                 return True
 
-    def _run_build(self, runtime, assembler, component, tarpath):
+    def _run_build(self, runtime, assembler, component, tarpath, reportpath):
         path = self['path']
         environ = self.environ
 
@@ -254,6 +259,10 @@ class AssembleComponent(ComponentTask):
 
         if self['tarfile']:
             now.tar(str(tarpath), {environ['BUILDPATH']: ''})
+        
+        if self['reportfile']:
+            now.report(str(reportpath), {environ['BUILDPATH']: ''})
+        
 
 class BuildComponent(ComponentTask):
     name = 'lattice.component.build'
