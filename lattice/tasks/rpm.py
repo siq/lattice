@@ -1,4 +1,5 @@
 from bake import *
+import tarfile
 from bake.util import get_package_data
 from scheme import *
 
@@ -55,9 +56,11 @@ class BuildRpm(ComponentTask):
 
         self.specdir = self.workpath / 'SPECS'
         self.buildrootdir = self.workpath / 'BUILDROOT'
+        self.builddir = self.workpath / 'BUILD'
 
         self.specdir.mkdir_p()
         self.buildrootdir.mkdir_p()
+        self.builddir.mkdir_p()
 
         dependencies = component.get('dependencies')
         if dependencies:
@@ -101,10 +104,11 @@ class BuildRpm(ComponentTask):
 
         runtime.chdir(self.buildrootdir)
         self._run_tar(runtime)
+        membersfile = self.builddir / 'INSTALLED_FILES'
+        membersfile.write_lines(self.membernames, append=True)
 
 
-        self.specpath.write_text('%files\n', append=True)
-        self.specpath.write_lines(self.reportpath.lines(), append=True)
+        self.specpath.write_text('%files -f INSTALLED_FILES\n', append=True)
 
         runtime.chdir(self.workpath)
         self._run_rpmbuild(runtime)
@@ -112,6 +116,8 @@ class BuildRpm(ComponentTask):
     def _run_tar(self, runtime):
         shellargs = ['tar', '-xjf', str(self['distpath'] / self.tgzname)]
         runtime.shell(shellargs, merge_output=True)
+        opentar = tarfile.open(str(self['distpath'] / self.tgzname), 'r')
+        self.membernames = ['\"/' + name + '\"' for name in opentar.getnames()]
 
     def _run_rpmbuild(self, runtime):
         pkgpath = self['distpath'] / self.arch / self.pkgname
