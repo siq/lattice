@@ -108,8 +108,6 @@ class BuildRpm(ComponentTask):
         membersfile.write_lines(self.membernames, append=True)
 
 
-        self.specpath.write_text('%files -f INSTALLED_FILES\n', append=True)
-
         runtime.chdir(self.workpath)
         self._run_rpmbuild(runtime)
 
