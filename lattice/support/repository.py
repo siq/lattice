@@ -39,6 +39,7 @@ class GitRepository(Repository):
 
     def checkout(self, metadata):
         url = metadata['url']
+        branch = metadata.get('branch')
         revision = metadata.get('revision')
 
         cached = None
@@ -53,6 +54,8 @@ class GitRepository(Repository):
                 root = cached
                 
         self._run_command(['clone', url, root], False, True)
+        if branch:
+            self._run_command(['checkout', branch], passthrough=True, root=root)
         if revision and revision != 'HEAD':
             self._run_command(['checkout', '--detach', '-q', revision],
                 passthrough=True, root=root)

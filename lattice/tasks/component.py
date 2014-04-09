@@ -229,6 +229,8 @@ class AssembleComponent(ComponentTask):
                 metadata['type'] == 'git'
             if self['revision']:
                 metadata['revision'] = self['revision']
+            if self['branch']:
+                metadata['branch'] = self['branch']
             return metadata
         else:
             raise TaskError('repository not specified')
