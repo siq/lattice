@@ -29,7 +29,6 @@ class BuildRpm(ComponentTask):
         name = component['name']
         version = component['version']
         self.tgzname = '%s-%s.tar.bz2' % (name, version)
-        self.reportpath = path('%s/%s-%s_collation-report.txt' % (str(self['distpath']), name, version))
 
         prefix = self['prefix']
         if prefix:
@@ -91,13 +90,12 @@ class BuildRpm(ComponentTask):
             if file_token in build:
                 scriptpath = path(build[file_token])
                 if scriptpath.exists():
-                    speccontent = ['\n', '%%%s' % script_name]
-                    speccontent.extend(scriptpath.lines()[1:])
-                    scriptpath.write_lines(speccontent)
                     script = scriptpath.bytes()
             elif script_token in build:
                 script = build[script_token]
             if script:
+                speccontent = ['\n', '%%%s' % script_name]
+                scriptpath.write_lines(speccontent)
                 script = interpolate_env_vars(script, environ)
                 self.specpath.write_bytes(script, append=True)
 
