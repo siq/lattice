@@ -82,7 +82,6 @@ class BuildProfile(Task):
             oldtarget = None
             target = self['target']
             if (('builds' in component) and (target not in component['builds'])):
-                runtime.info('target %s not implemented, using default' % target)
                 oldtarget = self['target']
                 self['target'] = 'default'
             self._build_component(runtime, component, built, timestamp, manifest,
