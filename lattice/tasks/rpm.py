@@ -95,7 +95,7 @@ class BuildRpm(ComponentTask):
                 script = build[script_token]
             if script:
                 speccontent = ['\n', '%%%s' % script_name]
-                scriptpath.write_lines(speccontent)
+                self.specpath.write_lines(speccontent, append=True)
                 script = interpolate_env_vars(script, environ)
                 self.specpath.write_bytes(script, append=True)
 
