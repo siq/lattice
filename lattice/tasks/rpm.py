@@ -84,7 +84,7 @@ class BuildRpm(ComponentTask):
             build = self.build
         except TaskError:
             build = {}
-
+        
         for file_token, script_token, script_name in self.SCRIPTS:
             script = None
             if file_token in build:
@@ -99,12 +99,10 @@ class BuildRpm(ComponentTask):
                 script = interpolate_env_vars(script, environ)
                 self.specpath.write_bytes(script, append=True)
 
-
         runtime.chdir(self.buildrootdir)
         self._run_tar(runtime)
         membersfile = self.builddir / 'INSTALLED_FILES'
         membersfile.write_lines(self.membernames, append=True)
-
 
         runtime.chdir(self.workpath)
         self._run_rpmbuild(runtime)

@@ -52,6 +52,8 @@ class BuildProfile(Task):
         if self['override_version']:
             profile['version'] = self['override_version']
 
+
+
         buildpath = path(self['path'])
         if buildpath.exists():
             if not self['overwrite_existing']:
@@ -77,6 +79,10 @@ class BuildProfile(Task):
         built = []
         for component in profile['components']:
             starting_commit = last_manifest.get(component['name'])
+            target = self['target']
+            if (('builds' in component) and (target not in component['builds'])):
+                runtime.info('target %s not implemented, using default' % target)
+                self['target'] = Text(nonnull=True, default='default')
             self._build_component(runtime, component, built, timestamp, manifest,
                 commit_log, starting_commit, buildfile)
 
@@ -93,6 +99,7 @@ class BuildProfile(Task):
             commit_log, starting_commit, buildfile):
 
         target = self['target']
+
         if (('builds' not in component or target not in component['builds'])
                 and not component.get('ephemeral')):
             runtime.info('ignoring %s (does not implement target %r)'
