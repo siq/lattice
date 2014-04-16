@@ -61,7 +61,11 @@ class BuildRpm(ComponentTask):
         self.buildrootdir.mkdir_p()
         self.builddir.mkdir_p()
 
-        dependencies = component.get('dependencies')
+        # use pkg deps if they exist
+        dependencies = component.get('package-dependencies')
+        if not dependencies:
+            dependencies = component.get('dependencies')
+
         if dependencies:
             if prefix:
                 dependencies = ['%s-%s' % (prefix.strip('-'), d) for d in dependencies]
