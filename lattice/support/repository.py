@@ -154,6 +154,9 @@ class SubversionRepository(Repository):
 
     def checkout(self, metadata):
         url = metadata['url']
+        revision = metadata.get('revision')
+        if not revision:
+            revision = 'HEAD'
 
         cached = None
         root = self.root
@@ -166,7 +169,7 @@ class SubversionRepository(Repository):
             else:
                 root = cached
 
-        self._run_command(['co', url, root], False, True)
+        self._run_command(['co', '-r', str(revision), url, root], False, True)
         if cached:
             cached.symlink(self.root)
 

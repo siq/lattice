@@ -71,6 +71,9 @@ class StandardAssembler(ComponentAssembler):
             environ=environ, specification=component)
 
     def get_version(self, component):
+        metadata = component['repository']
+        if metadata['type'] == 'svn' and metadata.has_key('revision'):
+            return str(metadata.get('revision'))
         return self.repository.get_current_version()
 
     def populate_commit_log(self, commit_log, component, starting_commit):
