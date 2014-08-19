@@ -1,10 +1,10 @@
 import os
 from collections import defaultdict
 from hashlib import sha1
-
 from bake.path import path
 from bake.process import Process
-
+from datetime import datetime, timedelta
+from time import sleep
 from lattice.support.specification import Specification
 from lattice.support.versioning import VersionToken
 
@@ -36,7 +36,6 @@ class Repository(object):
 
 class GitRepository(Repository):
     SUPPORTED_SYMBOLS = ['HEAD']
-
     def checkout(self, metadata):
         url = metadata['url']
         branch = metadata.get('branch')
@@ -52,8 +51,26 @@ class GitRepository(Repository):
                 return
             else:
                 root = cached
+        # make an attempt at cloning several times before giving up
+        end_time = datetime.now() + timedelta(minutes=5)
+        success = False
+        f = None
+        while datetime.now() < end_time:
+            try:
+                self._run_command(['clone', url, root], False, True)
+                success = True
+                break
+            except Exception, checkout_error:
+                if datetime.now() >= end_time:
+                    break
+                sleep(5)
+                continue
+        if not success:
+            msg = 'caught auto-retry timeout'
+            if checkout_error:
+                msg = msg + " " + checkout_error
+            raise RuntimeError(msg)
                 
-        self._run_command(['clone', url, root], False, True)
         if branch:
             self._run_command(['checkout', branch], passthrough=True, root=root)
         if revision and revision != 'HEAD':
