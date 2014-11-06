@@ -13,6 +13,8 @@ class BuildRpm(ComponentTask):
         'cachedir': Path(nonnull=True),
         'distpath': Path(nonempty=True),
         'prefix': Text(nonnull=True),
+        'manifest': Field(hidden=True),
+        'assembler': Field(hidden=True),
     }
 
     SCRIPTS = (
@@ -24,8 +26,11 @@ class BuildRpm(ComponentTask):
 
     def run(self, runtime):
         component = self.component
+        if component.get('ephemeral'):
+            return
         environ = self.environ
-
+        self.manifest = self['manifest']
+        self.assembler = self['assembler']
         name = component['name']
         version = component['version']
         self.tgzname = '%s-%s.tar.bz2' % (name, version)
@@ -109,7 +114,7 @@ class BuildRpm(ComponentTask):
         membersfile.write_lines(self.membernames, append=True)
 
         runtime.chdir(self.workpath)
-        self._run_rpmbuild(runtime)
+        self._run_rpmbuild(runtime, environ)
 
     def _run_tar(self, runtime):
         shellargs = ['tar', '-xjf', str(self['distpath'] / self.tgzname)]
@@ -117,15 +122,17 @@ class BuildRpm(ComponentTask):
         opentar = tarfile.open(str(self['distpath'] / self.tgzname), 'r')
         self.membernames = ['\"/' + name + '\"' for name in opentar.getnames()]
 
-    def _run_rpmbuild(self, runtime):
+    def _run_rpmbuild(self, runtime, environ):
         pkgpath = self['distpath'] / self.arch / self.pkgname
         runtime.shell(['fakeroot', 'rpmbuild', '-bb', 
-                       '--define', ' _rpmdir %s' % str(self['distpath']), 
+                       '--define', '_rpmdir %s' % str(self['distpath']), 
                        '--define', '_topdir %s' % str(self.workpath), str(self.specpath),
                        '--buildroot', self.buildrootdir],
                       merge_output=True)
 
         cachedir = self['cachedir']
+        if self.manifest:
+            self.assembler.populate_manifest(self.manifest, self.component, pkgpath.read_hexhash('md5'))
+
         if cachedir:
             pkgpath.copy2(cachedir)
-

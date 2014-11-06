@@ -27,6 +27,7 @@ class BuildProfile(Task):
         'dump_manifest': Text(),
         'environ': Map(Text(nonnull=True)),
         'last_manifest': Text(),
+        'existing_package_hashes': Text(),
         'override_version': Text(),
         'overwrite_existing': Boolean(default=False),
         'path': Text(nonempty=True),
@@ -67,6 +68,7 @@ class BuildProfile(Task):
 
         timestamp = datetime.utcnow()
         last_manifest = self._parse_last_manifest()
+        last_package_hashes = self._parse_last_manifest('package_hash')
 
         commit_log = None
         if self['dump_commit_log']:
@@ -80,18 +82,21 @@ class BuildProfile(Task):
         for component in profile['components']:
             starting_commit = last_manifest.get(component['name'])
             oldtarget = None
+            last_package_hash = None
+            if not component.get('ephemeral'):
+                last_package_hash = self._existing_package(runtime, last_package_hashes.get(component['name']))
             target = self['target']
             if (('builds' in component) and (target not in component['builds'])):
                 oldtarget = self['target']
                 self['target'] = 'default'
             self._build_component(runtime, component, built, timestamp, manifest,
-                commit_log, starting_commit, buildfile)
+                commit_log, starting_commit, last_package_hash, buildfile)
             if oldtarget:
                 self['target'] = oldtarget
 
         if buildfile:
             buildfile.write()
-        if self['build_manifest_component']:
+        if self['build_manifest_component'] and built:
             self._build_manifest(runtime, profile, timestamp, manifest)
         if self['dump_manifest']:
             self._dump_manifest(manifest, self['dump_manifest'])
@@ -99,7 +104,7 @@ class BuildProfile(Task):
             self._dump_commit_log(commit_log, self['dump_commit_log'])
 
     def _build_component(self, runtime, component, built, timestamp, manifest,
-            commit_log, starting_commit, buildfile):
+            commit_log, starting_commit, last_package_hash, buildfile):
 
         target = self['target']
 
@@ -108,6 +113,7 @@ class BuildProfile(Task):
             runtime.info('ignoring %s (does not implement target %r)'
                 % (component['name'], target))
 
+        assemblydir = str(runtime.curdir)
         buildpath = runtime.curdir / component['name']
         buildpath.mkdir()
 
@@ -120,7 +126,8 @@ class BuildProfile(Task):
             specification=component, target=self['target'], cachedir=self['cachedir'],
             post_tasks=self['post_tasks'], built=built, timestamp=timestamp,
             manifest=manifest, commit_log=commit_log, starting_commit=starting_commit,
-            repodir=self['repodir'], buildfile=buildfile)
+            last_package_hash=last_package_hash, repodir=self['repodir'], buildfile=buildfile,
+            assemblydir=assemblydir)
 
         runtime.chdir(curdir)
 
@@ -143,12 +150,31 @@ class BuildProfile(Task):
     def _dump_manifest(self, manifest, filename):
         output = []
         for component in manifest:
-            output.append('%(name)s:%(version)s:%(hash)s' % component)
+            output.append('%(name)s:%(version)s:%(hash)s:%(package_hash)s' % component)
 
         filename = path(filename)
         filename.write_bytes('\n'.join(output) + '\n')
 
-    def _parse_last_manifest(self):
+    def _existing_package(self, runtime, package_hash):
+        if not package_hash:
+            return
+
+        filename = self['existing_package_hashes']
+        if not filename:
+            return 
+        
+        filename = path(filename)
+        if not filename.exists():
+            return
+
+        res = [ line for line in filename.bytes().strip().split('\n') if line == package_hash ]
+
+        if len(res):
+            return res[0]
+        else:
+            return 'missing'
+
+    def _parse_last_manifest(self, field='hash'):
         filename = self['last_manifest']
         if not filename:
             return {}
@@ -159,8 +185,17 @@ class BuildProfile(Task):
 
         last_manifest = {}
         for line in filename.bytes().strip().split('\n'):
-            name, version, hash = line.split(':')
-            last_manifest[name] = hash
+            parts = line.split(':')
+            if len(parts) < 2:
+                continue
+            name = parts[0]
+            version = parts[1]
+            hash = parts[2]
+            if len(parts) == 4:
+                package_hash = parts[3]
+            else:
+                package_hash = None
+            last_manifest[name] = eval(field)
         return last_manifest
 
 class ManifestComponentAssembler(ComponentAssembler):

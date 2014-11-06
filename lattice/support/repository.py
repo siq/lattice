@@ -40,13 +40,17 @@ class GitRepository(Repository):
         url = metadata['url']
         branch = metadata.get('branch')
         revision = metadata.get('revision')
+        self.subfolder = metadata.get('subfolder')
 
         cached = None
         root = self.root
+        runtime = self.runtime
 
         if self.cachedir:
             cached = self._construct_cache_path(url, revision)
             if cached.exists():
+                if self.subfolder:
+                    cached = cached / self.subfolder
                 cached.symlink(root)
                 return
             else:
@@ -78,6 +82,8 @@ class GitRepository(Repository):
                 passthrough=True, root=root)
 
         if cached:
+            if self.subfolder:
+                cached = cached / self.subfolder
             cached.symlink(self.root)
 
     def enumerate_components(self):
@@ -99,6 +105,8 @@ class GitRepository(Repository):
         tokens = ['log']
         if starting_commit:
             tokens.append('%s..' % starting_commit)
+        tokens.append('--')
+        tokens.append('.')
 
         process = self._run_command(tokens, passive=True)
         if process.returncode == 0:
@@ -117,12 +125,16 @@ class GitRepository(Repository):
             else:
                 return version
 
-        process = self._run_command(['rev-list', '--all', '--count'])
-        return '%s+%s' % (unknown_version, process.stdout.strip())
+        rev_count = self.get_rev_count()
+        return '%s+%s' % (unknown_version, rev_count)
 
     def get_current_hash(self):
         process = self._run_command(['log', '-1', '--pretty=format:%H'])
         return process.stdout.strip()
+    
+    def get_rev_count(self):
+        process = self._run_command(['rev-list', '--all', '--count', '--', '.'])
+        return int(process.stdout.strip())
 
     @classmethod
     def is_repository(cls, root):
