@@ -132,8 +132,13 @@ class GitRepository(Repository):
         process = self._run_command(['log', '-1', '--pretty=format:%H'])
         return process.stdout.strip()
     
-    def get_rev_count(self):
-        process = self._run_command(['rev-list', '--all', '--count', '--', '.'])
+    def get_rev_count(self, subfolder=None):
+        args = ['rev-list', '--all', '--count', '--']
+        if subfolder:
+            args.append(subfolder)
+        else:
+            args.append('.')
+        process = self._run_command(args)
         return int(process.stdout.strip())
 
     @classmethod

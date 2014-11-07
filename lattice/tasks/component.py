@@ -79,7 +79,10 @@ class StandardAssembler(ComponentAssembler):
             return str(metadata.get('revision'))
         return self.repository.get_current_version()
     
-    def get_rev_count(self):
+    def get_rev_count(self, component):
+        metadata = component['repository']
+        if metadata['type'] != 'git':
+            return
         return self.repository.get_rev_count()
 
     def populate_commit_log(self, commit_log, component, starting_commit, runtime):
@@ -190,7 +193,7 @@ class AssembleComponent(ComponentTask):
             if 'pre' in component['version']: # doing this for npyscreen which has unique format
                 splitchars = 'pre'
             version, pval = component['version'].split(splitchars)
-            component['version'] = '%s%s%s' % (version, splitchars, (int(pval) + assembler.get_rev_count()))
+            component['version'] = '%s%s%s' % (version, splitchars, (int(pval) + assembler.get_rev_count(component)))
 
         manifest = self['manifest']
         if manifest is not None:
@@ -290,6 +293,8 @@ class AssembleComponent(ComponentTask):
                 metadata['revision'] = self['revision']
             if self['branch']:
                 metadata['branch'] = self['branch']
+            if self['subfolder']:
+                metadata['subfolder'] = self['subfolder']
             return metadata
         else:
             raise TaskError('repository not specified')
