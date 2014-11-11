@@ -18,3 +18,4 @@ lattice/
     deb.py           <- package post task for deb
   support/
     repository.py    <- providers for source repositories
+
