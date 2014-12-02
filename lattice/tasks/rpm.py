@@ -89,6 +89,25 @@ class BuildRpm(ComponentTask):
         self.specpath = path('%s/%s-%s.spec' % (str(self.specdir), name, version)) 
         self.specpath.write_bytes(specfile)
 
+        if component.get('package-obsoletes'):
+            obsoletes = ', '.join(component.get('package-obsoletes'))
+            speclines = self.specpath.lines()
+            newspeclines = []
+            for specline in speclines:
+                newspeclines.append(specline)
+                if 'requires' in specline.lower():
+                    newspeclines.append('Obsoletes: %s' % obsoletes)
+            self.specpath.write_lines(newspeclines)
+
+        if component.get('package-provides'):
+            provides = ', '.join(component.get('package-provides'))
+            speclines = self.specpath.lines()
+            newspeclines = []
+            for specline in speclines:
+                newspeclines.append(specline)
+                if 'requires' in specline.lower():
+                    newspeclines.append('Provides: %s' % provides)
+            self.specpath.write_lines(newspeclines)
         try:
             build = self.build
         except TaskError:
@@ -132,7 +151,7 @@ class BuildRpm(ComponentTask):
 
         cachedir = self['cachedir']
         if self.manifest:
-            self.assembler.populate_manifest(self.manifest, self.component, pkgpath.read_hexhash('md5'))
+            self.assembler.populate_manifest(self.manifest, self.component, pkgpath.read_hexhash('md5'), self.pkgname, runtime)
 
         if cachedir:
             pkgpath.copy2(cachedir)

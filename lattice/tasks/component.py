@@ -50,7 +50,7 @@ class ComponentTask(Task):
         return environ
 
 class ComponentAssembler(object):
-    def build(self, runtime, name, path, target, environ, component):
+    def build(self, runtime, name, path, target, environ, component, manifest):
         pass
 
     def get_version(self, component):
@@ -69,7 +69,9 @@ class ComponentAssembler(object):
         pass
 
 class StandardAssembler(ComponentAssembler):
-    def build(self, runtime, name, path, target, environ, component):
+    def build(self, runtime, name, path, target, environ, component, manifest):
+        runtime.report('build standardassembler\nmanifest: %s' % manifest)
+        environ['MANIFEST_PACKAGES'] = ' '.join(self.get_manifest_pkgnames(manifest)) or ''
         runtime.execute('lattice.component.build', name=name, path=path, target=target,
             environ=environ, specification=component)
 
@@ -117,10 +119,16 @@ class StandardAssembler(ComponentAssembler):
             commit_log.append('no changes\n')
             return False
 
-    def populate_manifest(self, manifest, component, last_package_hash):
+    def populate_manifest(self, manifest, component, last_package_hash=None, last_pkgname=None, runtime=None):
+        if runtime:
+            runtime.report('populate %s %s %s %s' % (manifest, component, last_package_hash, last_pkgname))
         entry = {'name': component['name'], 'version': component['version']}
         entry['hash'] = self.repository.get_current_hash()
-        entry['package_hash'] = last_package_hash
+        component['hash'] = entry['hash']
+        if last_package_hash:
+            entry['package_hash'] = last_package_hash
+        if last_pkgname:
+            entry['package_file'] = last_pkgname
         exists = False
         for i, v in enumerate(manifest):
             if v['name'] == component['name']:
@@ -129,6 +137,12 @@ class StandardAssembler(ComponentAssembler):
             manifest[i] = entry
         else: 
             manifest.append(entry)
+
+    def get_manifest_pkgnames(self, manifest):
+        try:
+            return [entry['package_file'] for entry in manifest  if entry.has_key('package_file')]
+        except KeyError:
+            pass
 
     def prepare_source(self, runtime, component, repodir):
         try:
@@ -161,6 +175,7 @@ class AssembleComponent(ComponentTask):
         'revision': Text(nonnull=True),
         'starting_commit': Field(hidden=True),
         'last_package_hash': Field(hidden=True),
+        'last_pkgname': Field(hidden=True),
         'tarfile': Boolean(default=False),
         'reportfile': Boolean(default=False),
         'url': Text(nonnull=True),
@@ -174,6 +189,7 @@ class AssembleComponent(ComponentTask):
         component = self['specification']
  
         last_package_hash = self['last_package_hash']
+        last_pkgname = self['last_pkgname']
 
         distpath = (self['distpath'] or (runtime.curdir / 'dist')).abspath()
         distpath.makedirs_p()
@@ -197,7 +213,8 @@ class AssembleComponent(ComponentTask):
 
         manifest = self['manifest']
         if manifest is not None:
-            assembler.populate_manifest(manifest, component, last_package_hash)
+          assembler.populate_manifest(manifest, component)
+          environ['HASH'] = component['hash']
 
         commit_log = self['commit_log']
 
@@ -217,10 +234,17 @@ class AssembleComponent(ComponentTask):
             return
         
         building = self._must_build(component, built)
-
-         # re-use existing rpm.. explode package into BUILDPATH
+        # re-use existing rpm.. explode package into BUILDPATH, update manifest with last_manifest values
         if (last_package_hash and last_package_hash != 'missing') and not (has_commits or building):
             self._extract_rpm(last_package_hash)
+            if manifest is not None:
+                params=[manifest, component]
+                if last_package_hash is not None:
+                    params.append(last_package_hash)
+                if last_pkgname is not None:
+                    params.append(last_pkgname)
+                if len(params) > 2:
+                    assembler.populate_manifest(*params)
             return
 
         buildfile = self['buildfile']
@@ -244,7 +268,7 @@ class AssembleComponent(ComponentTask):
         tarpath = distpath / self._get_component_tarfile(component)
         reportpath = distpath / self._get_component_reportfile(component)
         if building:
-            self._run_build(runtime, assembler, component, tarpath, reportpath)
+            self._run_build(runtime, assembler, component, tarpath, reportpath, manifest)
             if built is not None and not component.get('independent'):
                 built.append(component['name'])
 
@@ -300,6 +324,8 @@ class AssembleComponent(ComponentTask):
             raise TaskError('repository not specified')
 
     def _must_build(self, component, built):
+        if component.get('must-build'):
+            return True
         if not built:
             return False
 
@@ -315,13 +341,13 @@ class AssembleComponent(ComponentTask):
             if dependency in built:
                 return True
 
-    def _run_build(self, runtime, assembler, component, tarpath, reportpath):
+    def _run_build(self, runtime, assembler, component, tarpath, reportpath, manifest):
         path = self['path']
         environ = self.environ
 
         original = Collation(path)
-        assembler.build(runtime, self['name'], path, self['target'], environ, component)
-        self._prune_pycpyo()
+        assembler.build(runtime, self['name'], path, self['target'], environ, component, manifest)
+        #self._prune_pycpyo()
         now = Collation(path).prune(original)
 
         if self['tarfile']:
@@ -335,7 +361,7 @@ class AssembleComponent(ComponentTask):
         runtime = self.runtime
         curdir = runtime.curdir
         root = self.runtime.chdir(environ['BUILDPATH'])
-        shellargs = ['bash', '-c', 'rpm2cpio %s/%s |cpio -idv' % (environ['STOREPATH'], package_hash)]
+        shellargs = ['bash', '-c', 'rpm2cpio %s/%s |cpio -idmv' % (environ['STOREPATH'], package_hash)]
         runtime.shell(shellargs, merge_output=True)
         runtime.chdir(curdir)
 
