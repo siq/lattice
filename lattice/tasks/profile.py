@@ -149,6 +149,10 @@ class BuildProfile(Task):
         version = datetime.utcnow().strftime('%Y%m%d%H%M%S')
 
         component = {'name': name, 'version': version, 'nocache': True}
+
+        runtime.linefeed(2)
+        runtime.report('***** building %s' % component['name'])
+
         runtime.execute('lattice.component.assemble', environ=self['environ'],
             distpath=self['distpath'], name=name, path=self['path'], specification=component,
             target=self['target'], cachedir=self['cachedir'], post_tasks=self['post_tasks'],
@@ -222,7 +226,7 @@ class ManifestComponentAssembler(ComponentAssembler):
         self.profile = profile
         self.timestamp = timestamp
 
-    def build(self, runtime, name, buildpath, target, environ, component):
+    def build(self, runtime, name, buildpath, target, environ, component, manifest):
         profile = self.profile
         buildpath = path(buildpath)
 
