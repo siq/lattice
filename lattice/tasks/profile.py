@@ -106,7 +106,7 @@ class BuildProfile(Task):
 
         if buildfile:
             buildfile.write()
-        if self['build_manifest_component'] and built:
+        if self['build_manifest_component'] :
             self._build_manifest(runtime, profile, timestamp, manifest)
         if self['dump_manifest']:
             self._dump_manifest(manifest, self['dump_manifest'])
