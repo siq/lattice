@@ -106,7 +106,7 @@ class BuildProfile(Task):
 
         if buildfile:
             buildfile.write()
-        if self['build_manifest_component'] :
+        if self['build_manifest_component'] and built:
             self._build_manifest(runtime, profile, timestamp, manifest)
         if self['dump_manifest']:
             self._dump_manifest(manifest, self['dump_manifest'])
@@ -147,9 +147,8 @@ class BuildProfile(Task):
         name = '%s-manifest' % profile['name']
 
         version = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-
         component = {'name': name, 'version': version, 'nocache': True}
-
+        
         runtime.linefeed(2)
         runtime.report('***** building %s' % component['name'])
 
@@ -226,7 +225,7 @@ class ManifestComponentAssembler(ComponentAssembler):
         self.profile = profile
         self.timestamp = timestamp
 
-    def build(self, runtime, name, buildpath, target, environ, component, manifest):
+    def build(self, runtime, name, buildpath, target, environ, component):
         profile = self.profile
         buildpath = path(buildpath)
 

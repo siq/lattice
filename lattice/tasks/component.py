@@ -349,6 +349,8 @@ class AssembleComponent(ComponentTask):
         assembler.build(runtime, self['name'], path, self['target'], environ, component, manifest)
         #self._prune_pycpyo()
         now = Collation(path).prune(original)
+        #for nowpath in now.filepaths:
+        #    runtime.report('_run_build now.filepaths\n: %s' % nowpath)
 
         if self['tarfile']:
             now.tar(str(tarpath), {environ['BUILDPATH']: ''})
