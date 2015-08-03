@@ -213,7 +213,7 @@ class AssembleComponent(ComponentTask):
 
         manifest = self['manifest']
         if manifest is not None:
-          assembler.populate_manifest(manifest, component)
+          assembler.populate_manifest(manifest, component, last_package_hash)
           environ['HASH'] = component['hash']
 
         commit_log = self['commit_log']
@@ -227,7 +227,7 @@ class AssembleComponent(ComponentTask):
 
         built = self['built']
         if component.get('ephemeral') and not component.get('builds'):
-            if built is not None and not component.get('independent') and has_commits:
+            if (built != None) and has_commits:
                 built.append(component['name'])
             if curdir:
                 runtime.chdir(curdir)
@@ -269,7 +269,7 @@ class AssembleComponent(ComponentTask):
         reportpath = distpath / self._get_component_reportfile(component)
         if building:
             self._run_build(runtime, assembler, component, tarpath, reportpath, manifest)
-            if built is not None and not component.get('independent'):
+            if built != None:
                 built.append(component['name'])
 
         if self['post_tasks']: # "packaging" post tasks...
@@ -326,7 +326,7 @@ class AssembleComponent(ComponentTask):
     def _must_build(self, component, built):
         if component.get('must-build'):
             return True
-        if not built:
+        elif not built and not component.get('volatile', False):
             return False
 
         required = []

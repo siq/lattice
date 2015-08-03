@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from os import getenv
 from bake import *
 from scheme import *
 
@@ -106,7 +106,7 @@ class BuildProfile(Task):
 
         if buildfile:
             buildfile.write()
-        if self['build_manifest_component'] and built:
+        if self['build_manifest_component'] and (built or getenv("FORCECHANNEL")):
             self._build_manifest(runtime, profile, timestamp, manifest)
         if self['dump_manifest']:
             self._dump_manifest(manifest, self['dump_manifest'])
@@ -214,8 +214,13 @@ class BuildProfile(Task):
             hash = parts[2]
             if len(parts) > 3:
                 package_hash = parts[3]
+            else:
+                package_hash = None
             if len(parts) > 4:
                 package_file = parts[4]
+            else:
+                package_file = None
+
             last_manifest[name] = eval(field)
         return last_manifest
 
