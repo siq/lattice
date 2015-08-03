@@ -148,7 +148,7 @@ class BuildProfile(Task):
 
         version = datetime.utcnow().strftime('%Y%m%d%H%M%S')
         component = {'name': name, 'version': version, 'nocache': True}
-        
+
         runtime.linefeed(2)
         runtime.report('***** building %s' % component['name'])
 
@@ -180,7 +180,7 @@ class BuildProfile(Task):
         filename = self['existing_package_hashes']
         if not filename:
             return 
-        
+
         filename = path(filename)
         if not filename.exists():
             return

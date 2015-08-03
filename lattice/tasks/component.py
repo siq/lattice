@@ -349,15 +349,12 @@ class AssembleComponent(ComponentTask):
         assembler.build(runtime, self['name'], path, self['target'], environ, component, manifest)
         #self._prune_pycpyo()
         now = Collation(path).prune(original)
-        #for nowpath in now.filepaths:
-        #    runtime.report('_run_build now.filepaths\n: %s' % nowpath)
-
         if self['tarfile']:
             now.tar(str(tarpath), {environ['BUILDPATH']: ''})
-        
+
         if self['reportfile']:
             now.report(str(reportpath), {environ['BUILDPATH']: ''})
-       
+
     def _extract_rpm(self, package_hash):
         environ = self.environ
         runtime = self.runtime
