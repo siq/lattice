@@ -230,7 +230,7 @@ class ManifestComponentAssembler(ComponentAssembler):
         self.profile = profile
         self.timestamp = timestamp
 
-    def build(self, runtime, name, buildpath, target, environ, component):
+    def build(self, runtime, name, buildpath, target, environ, component, manifest=None):
         profile = self.profile
         buildpath = path(buildpath)
 
