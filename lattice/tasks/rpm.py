@@ -32,6 +32,11 @@ class BuildRpm(ComponentTask):
         self.manifest = self['manifest']
         self.assembler = self['assembler']
         name = component['name']
+        if component.get('arch'):
+          self.arch = arch
+        else:
+          self.arch = 'x86_64'
+
         version = component['version']
         self.tgzname = '%s-%s.tar.bz2' % (name, version)
 
@@ -51,7 +56,6 @@ class BuildRpm(ComponentTask):
             self.release = 1
 
         # supplement for arch value
-        self.arch = 'x86_64'
 
         self.pkgname = '%s-%s-%s.%s.rpm' % (name, version, self.release, self.arch)
 
@@ -112,7 +116,6 @@ class BuildRpm(ComponentTask):
             build = self.build
         except TaskError:
             build = {}
-        
         for file_token, script_token, script_name in self.SCRIPTS:
             script = None
             if file_token in build:
@@ -143,10 +146,17 @@ class BuildRpm(ComponentTask):
 
     def _run_rpmbuild(self, runtime, environ):
         pkgpath = self['distpath'] / self.arch / self.pkgname
-        runtime.shell(['fakeroot', 'rpmbuild', '-bb', 
-                       '--define', '_rpmdir %s' % str(self['distpath']), 
+        if self.arch != 'x86_64':
+            shellcmd = ['fakeroot', 'rpmbuild', '-bb',
+                       '--define', '_rpmdir %s' % str(self['distpath']),
                        '--define', '_topdir %s' % str(self.workpath), str(self.specpath),
-                       '--buildroot', self.buildrootdir],
+                       '--buildroot', self.buildrootdir, '--target', self.arch]
+        else:
+            shellcmd = ['fakeroot', 'rpmbuild', '-bb',
+                       '--define', '_rpmdir %s' % str(self['distpath']),
+                       '--define', '_topdir %s' % str(self.workpath), str(self.specpath),
+                       '--buildroot', self.buildrootdir]
+        runtime.shell(shellcmd,
                       merge_output=True)
 
         cachedir = self['cachedir']
