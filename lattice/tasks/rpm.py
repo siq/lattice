@@ -33,7 +33,7 @@ class BuildRpm(ComponentTask):
         self.assembler = self['assembler']
         name = component['name']
         if component.get('arch'):
-          self.arch = arch
+          self.arch = component.get('arch')
         else:
           self.arch = 'x86_64'
 
