@@ -103,15 +103,19 @@ class BuildProfile(Task):
                 commit_log, starting_commit, last_package_hash, last_pkgname, buildfile)
             if oldtarget:
                 self['target'] = oldtarget
+            if self['dump_commit_log']:
+                self._dump_commit_log(commit_log, self['dump_commit_log'])
+            if self['dump_manifest']:
+                self._dump_manifest(manifest, self['dump_manifest'])
 
         if buildfile:
             buildfile.write()
         if self['build_manifest_component'] and (built or getenv("FORCECHANNEL")):
             self._build_manifest(runtime, profile, timestamp, manifest)
-        if self['dump_manifest']:
-            self._dump_manifest(manifest, self['dump_manifest'])
         if self['dump_commit_log']:
             self._dump_commit_log(commit_log, self['dump_commit_log'])
+        if self['dump_manifest']:
+            self._dump_manifest(manifest, self['dump_manifest'])
 
     def _build_component(self, runtime, component, built, timestamp, manifest,
             commit_log, starting_commit, last_package_hash, last_pkgname, buildfile):
