@@ -260,10 +260,11 @@ class AssembleComponent(ComponentTask):
                 if not building:
                     runtime.report('skipping build due to buildfile')
             buildfile.set(component['name'], component['version'])
-        elif cachedir and not component.get('ephemeral') and not building:
+        elif not component.get('ephemeral'):
             cachedir.makedirs_p()
             self['tarfile'] = True
-            building = self._check_cachedir(cachedir, component, distpath)
+            #building = self._check_cachedir(cachedir, component, distpath)
+            building = True
 
         tarpath = distpath / self._get_component_tarfile(component)
         reportpath = distpath / self._get_component_reportfile(component)
