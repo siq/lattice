@@ -231,8 +231,9 @@ class AssembleComponent(ComponentTask):
             if curdir:
                 runtime.chdir(curdir)
             return
-        
         building = self._must_build(component, built)
+        if has_commits or (getenv("FORCE_COMPONENTS") and (component['name'] in getenv("FORCE_COMPONENTS"))):
+            building = True
         # re-use existing rpm.. explode package into BUILDPATH, update manifest with last_manifest values
         if (last_package_hash and last_package_hash != 'missing') and not (has_commits or building):
             self._extract_rpm(last_package_hash)
@@ -248,9 +249,6 @@ class AssembleComponent(ComponentTask):
 
         buildfile = self['buildfile']
         cachedir = self['cachedir']
-
-        if has_commits or (getenv("FORCE_COMPONENTS") and (component['name'] in getenv("FORCE_COMPONENTS"))):
-            building = True
 
         if buildfile:
             if not building:
