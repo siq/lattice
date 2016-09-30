@@ -1,8 +1,7 @@
 import tarfile
-
+from os import getenv
 from bake import *
 from bake.filesystem import Collation
-from bake.process import Process
 from scheme import *
 from lattice.support.repository import Repository
 from lattice.support.specification import Specification
@@ -250,8 +249,7 @@ class AssembleComponent(ComponentTask):
         buildfile = self['buildfile']
         cachedir = self['cachedir']
 
-        
-        if has_commits:
+        if has_commits or (getenv("FORCE_COMPONENTS") and (component['name'] in getenv("FORCE_COMPONENTS"))):
             building = True
 
         if buildfile:
