@@ -257,7 +257,7 @@ class AssembleComponent(ComponentTask):
                     runtime.report('skipping build due to buildfile')
             buildfile.set(component['name'], component['version'])
         elif not component.get('ephemeral'):
-            cachedir.makedirs_p()
+            #cachedir.makedirs_p()
             self['tarfile'] = True
             #building = self._check_cachedir(cachedir, component, distpath)
             building = True
@@ -278,8 +278,8 @@ class AssembleComponent(ComponentTask):
 
         if curdir:
             runtime.chdir(curdir)
-        if cachedir and not (component.get('nocache', False) or component.get('ephemeral')):
-            tarpath.copy2(cachedir)
+        #if cachedir and not (component.get('nocache', False) or component.get('ephemeral')):
+        #    tarpath.copy2(cachedir)
 
     def _check_cachedir(self, cachedir, component, distpath):
         cached = cachedir / self._get_component_tarfile(component)
