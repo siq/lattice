@@ -86,6 +86,8 @@ class BuildProfile(Task):
 
         built = []
         for component in profile['components']:
+            if component.get('disabled'):
+                continue
             starting_commit = last_manifest.get(component['name'])
             oldtarget = None
             last_package_hash = None
