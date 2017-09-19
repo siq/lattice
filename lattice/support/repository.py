@@ -78,7 +78,7 @@ class GitRepository(Repository):
         if branch:
             self._run_command(['checkout', branch], passthrough=True, root=root)
         if revision and revision != 'HEAD':
-            self._run_command(['checkout', '--detach', '-q', revision],
+            self._run_command(['checkout', '-q', revision],
                 passthrough=True, root=root)
 
         if cached:
