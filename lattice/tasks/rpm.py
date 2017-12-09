@@ -49,7 +49,7 @@ class BuildRpm(ComponentTask):
         #if self.release:
         #    self.release = int(self.release) + 1
         #elif component.get('volatile'):
-        #timestamp = self['timestamp']
+        timestamp = self['timestamp']
         #if timestamp:
         self.release = timestamp.strftime('%Y%m%d%H%M%S')
         #else:
