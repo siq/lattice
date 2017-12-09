@@ -45,19 +45,19 @@ class BuildRpm(ComponentTask):
             name = '%s-%s' % (prefix.strip('-'), name)
 
         # supplement for rpm's release req
-        self.release = component.get('release')
-        if self.release:
-            self.release = int(self.release) + 1
-        elif component.get('volatile'):
-            timestamp = self['timestamp']
-            if timestamp:
-                self.release = timestamp.strftime('%Y%m%d%H%M%S')
-        else:
-            self.release = 1
+        #self.release = component.get('release')
+        #if self.release:
+        #    self.release = int(self.release) + 1
+        #elif component.get('volatile'):
+        #timestamp = self['timestamp']
+        #if timestamp:
+        self.release = timestamp.strftime('%Y%m%d%H%M%S')
+        #else:
+        #    self.release = 1
 
         # supplement for arch value
 
-        self.pkgname = '%s-%s-%s.%s.rpm' % (name, version, self.release, self.arch)
+        self.pkgname = '%s-%sp%s.%s.rpm' % (name, version, self.release, self.arch)
 
         self.workpath = runtime.curdir / ('build_%s_rpm' % name)
         self.workpath.makedirs_p()
