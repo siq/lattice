@@ -57,7 +57,7 @@ class BuildRpm(ComponentTask):
 
         # supplement for arch value
 
-        self.pkgname = '%s-%sp%s.%s.rpm' % (name, version, self.release, self.arch)
+        self.pkgname = '%s-%sp%s-1.%s.rpm' % (name, version, self.release, self.arch)
 
         self.workpath = runtime.curdir / ('build_%s_rpm' % name)
         self.workpath.makedirs_p()
@@ -83,8 +83,8 @@ class BuildRpm(ComponentTask):
         template = get_package_data('lattice', 'templates/rpm-spec-file.tmpl')
         specfile = template % {
             'component_name': name,
-            'component_version': version,
-            'component_release': self.release,
+            'component_version': '%sp%s' % (version, self.release),
+            'component_release': '1',
             'component_maintainer_name': 'IBM',
             'component_maintainer_email': 'storediqsupport@us.ibm.com',
             'component_depends': dependencies or 'rpm',
