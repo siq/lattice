@@ -203,12 +203,12 @@ class AssembleComponent(ComponentTask):
 
         if component['version'] == 'HEAD':
             component['version'] = assembler.get_version(component)
-        elif 'p' in component['version']:
-            splitchars = 'p'
-            if 'pre' in component['version']: # doing this for npyscreen which has unique format
-                splitchars = 'pre'
-            version, pval = component['version'].split(splitchars)
-            component['version'] = '%s%s%s' % (version, splitchars, (int(pval) + assembler.get_rev_count(component)))
+        #elif 'p' in component['version']:
+        #    splitchars = 'p'
+        #    if 'pre' in component['version']: # doing this for npyscreen which has unique format
+        #        splitchars = 'pre'
+        #    version, pval = component['version'].split(splitchars)
+        #    component['version'] = '%s%s%s' % (version, splitchars, (int(pval) + assembler.get_rev_count(component)))
 
         manifest = self['manifest']
         if manifest is not None:
