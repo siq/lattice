@@ -90,6 +90,8 @@ class BuildProfile(Task):
                 continue
             runtime.report('###KC component %s' % component)
             runtime.report('###KC last_manifest %s' % last_manifest)
+            print '###KC component %s' % component
+            print '###KC last_manifest %s' % last_manifest
             starting_commit = last_manifest.get(component['name'])
             oldtarget = None
             last_package_hash = None
