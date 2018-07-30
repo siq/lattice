@@ -88,12 +88,7 @@ class BuildProfile(Task):
         for component in profile['components']:
             if component.get('disabled'):
                 continue
-            runtime.info('###KC component %s' % component)
-            runtime.info('###KC last_manifest %s' % last_manifest)
-            try:
-                starting_commit = last_manifest.get(component['name'])
-            except:
-                raise TaskError('###KC %s -- %' % (component, last_manifest))
+            starting_commit = last_manifest.get(component['name'])
             oldtarget = None
             last_package_hash = None
             last_pkgname = None
