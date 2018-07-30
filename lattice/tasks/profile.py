@@ -88,6 +88,8 @@ class BuildProfile(Task):
         for component in profile['components']:
             if component.get('disabled'):
                 continue
+            runtime.report('###KC component %s' % component)
+            runtime.report('###KC last_manifest %s' % last_manifest)
             starting_commit = last_manifest.get(component['name'])
             oldtarget = None
             last_package_hash = None
@@ -185,7 +187,7 @@ class BuildProfile(Task):
 
         filename = self['existing_package_hashes']
         if not filename:
-            return 
+            return
 
         filename = path(filename)
         if not filename.exists():
